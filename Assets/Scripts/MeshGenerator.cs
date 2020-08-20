@@ -275,7 +275,36 @@ public class MeshGenerator : MonoBehaviour
 
             List<int> hashes = hash.TriangleBoundingBoxHashes(p0, p1, p2);
 
-            
+            for(int h = 0; h < hashes.Count; h++)
+            {
+                if(spHash[h].indices != null)
+                {
+                    for(int sph = 0; sph < spHash[h].indices.Count; sph++)
+                    {
+                        int idx = spHash[h].indices[sph];
+                        if(idx != _particles[tri.indexTriA] && idx != _particles[tri.indexTriB] && idx != _particles[tri.indexTriC])
+                        {
+                            Vector3 p = _particles[idx].Position;
+                            float w = _particles[idx].Mass;
+
+                            Vector3 corr, corr0, corr1, corr2;
+                            if(TrianglePointDistanceConstraint(
+                                p, w,
+                                p0, w0,
+                                p1, w1,
+                                p2, w2,
+                                thickness, 1f, 0.0f,
+                                out corr, out corr0, out corr1, out corr2))
+                            {
+                                _particles[idx].Position += corr;
+                                _particles[tri.indexTriA].Position += corr0;
+                                _particles[tri.indexTriB].Position += corr1;
+                                _particles[tri.indexTriC].Position += corr2;
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         UpdateMesh();
