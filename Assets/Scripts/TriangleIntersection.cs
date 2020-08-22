@@ -4,228 +4,10 @@ using UnityEngine;
 
 
 
-
-
-namespace PositionBasedDynamics
+public class TriangleIntersection
 {
-  public class PBD
-  {
-    // epsilon (a value that determine if the changes is too small to change the position)
-    public static float eps = 1e-6f;
 
-    public static void UpdatePosition(MeshData md)
-    {
-      for (int i=0; i < md.particles.Length; i++)
-      {
-        md.particles[i].velocity = md.particles[i].predictedPos - md.particles[i].pos;
-      }
-    }
-
-    public static bool ExternalForce(
-      float dt,
-      Vector3 p, Vector3 v, float w,
-      Vector3 force,
-      float damping,
-      out Vector3 corr)
-    {
-      corr = Vector3.zero;
-      if (w == 0.0f) return false;
-
-      v += dt * w * force * damping;
-      corr = dt * v;
-      return true;
-    }
-
-    public static bool DistanceConstraint(
-      Vector3 p0, float w0,
-      Vector3 p1, float w1,
-      float restLength,
-      float stretchStiffness,
-      float compressionStiffness,
-      out Vector3 corr0,
-      out Vector3 corr1)
-    {
-      corr0 = corr1 = Vector3.zero;
-      float wSum = w0 + w1;
-      if (wSum == 0.0f) return false;
-
-      Vector3 n = p0 - p1;
-      float d = n.magnitude;
-
-      Vector3 corr;
-      if (d < restLength)
-      {
-        corr = compressionStiffness * n * (d - restLength) / wSum;
-      } else
-      {
-        corr = stretchStiffness * n * (d - restLength) / wSum;
-      }
-
-      corr0 = -w0 * corr;
-      corr1 = w1 * corr;
-      return true;
-    }
-
-    public static bool DihedralConstraint(
-      Vector3 p0, float w0,
-      Vector3 p1, float w1,
-      Vector3 p2, float w2,
-      Vector3 p3, float w3,
-      float restAngle,
-      float stiffness,
-      out Vector3 corr0,
-      out Vector3 corr1,
-      out Vector3 corr2,
-      out Vector3 corr3)
-    {
-      corr0 = corr1 = corr2 = corr3 = Vector3.zero;
-      if (w0 == 0.0f && w1 == 0.0f) return false;
-
-      Vector3 e = p3 - p2;
-      float elen = e.magnitude;
-      if (elen < eps) return false;
-
-      float invElen = 1 / elen;
-
-      Vector3 n1 = Vector3.Cross((p2 - p0), (p3 - p0)); n1 /= n1.sqrMagnitude;
-      Vector3 n2 = Vector3.Cross((p3 - p1), (p2 - p1)); n2 /= n2.sqrMagnitude;
-
-      Vector3 d0 = elen * n1;
-      Vector3 d1 = elen * n2;
-      Vector3 d2 = Vector3.Dot((p0 - p3), e) * invElen * n1 + Vector3.Dot((p1-p3), e) * invElen * n2;
-      Vector3 d3 = Vector3.Dot((p2 - p0), e) * invElen * n1 + Vector3.Dot((p2-p1), e) * invElen * n2;
-
-      Vector3.Normalize(n1);
-      Vector3.Normalize(n2);
-      float dot = Vector3.Dot(n1, n2);
-
-      if (dot < -1.0f) dot = -1.0f;
-      if (dot >  1.0f) dot =  1.0f;
-      float phi = Mathf.Acos(dot);	
-
-      // float phi = (-0.6981317 * dot * dot - 0.8726646) * dot + 1.570796;	// fast approximation
-
-      float lambda = 
-        w0 * d0.sqrMagnitude +
-        w1 * d1.sqrMagnitude +
-        w2 * d2.sqrMagnitude +
-        w3 * d3.sqrMagnitude;
-
-      if (lambda == 0.0f) return false;	
-
-      // stability
-      // 1.5 is the largest magic number I found to be stable in all cases :-)
-      //if (stiffness > 0.5 && fabs(phi - b.restAngle) > 1.5)		
-      //	stiffness = 0.5;
-
-      lambda = (phi - restAngle) / lambda * stiffness;
-
-      if (Vector3.Dot(Vector3.Cross(n1, n2), e) > 0.0f) lambda = -lambda;	
-
-      corr0 = - w0 * lambda * d0;
-      corr1 = - w1 * lambda * d1;
-      corr2 = - w2 * lambda * d2;
-      corr3 = - w3 * lambda * d3;
-      return true;
-    }
-
-    public static bool VolumeConstraint(
-      Vector3 p0, float w0,
-      Vector3 p1, float w1,
-      Vector3 p2, float w2,
-      Vector3 p3, float w3,
-      float restVolume,
-      float negVolumeStiffness,
-      float posVolumeStiffness,
-      out Vector3 corr0,
-      out Vector3 corr1,
-      out Vector3 corr2,
-      out Vector3 corr3)
-    {
-      corr0 = corr1 = corr2 = corr3 = Vector3.zero;
-      float volume = (1 / 6) * Vector3.Dot(Vector3.Cross((p1 - p0), (p2 - p0)), (p3 - p0));
-
-      if (posVolumeStiffness == 0.0f && volume > 0.0f) return false;
-      if (negVolumeStiffness == 0.0f && volume < 0.0f) return false;
-
-      Vector3 grad0 = Vector3.Cross((p1 - p2), (p3 - p2));
-      Vector3 grad1 = Vector3.Cross((p2 - p0), (p3 - p0));
-      Vector3 grad2 = Vector3.Cross((p0 - p1), (p3 - p1));
-      Vector3 grad3 = Vector3.Cross((p1 - p0), (p2 - p0));
-
-      float lambda = 
-        w0 * grad0.sqrMagnitude +
-        w1 * grad1.sqrMagnitude +
-        w2 * grad2.sqrMagnitude +
-        w3 * grad3.sqrMagnitude;
-
-      if (Mathf.Abs(lambda) < eps) return false;
-
-      if (volume < 0.0f) lambda = negVolumeStiffness * (volume - restVolume) / lambda;
-      else lambda = posVolumeStiffness * (volume - restVolume) / lambda;
-
-      corr0 = -lambda * w0 * grad0;
-      corr1 = -lambda * w1 * grad1;
-      corr2 = -lambda * w2 * grad2;
-      corr3 = -lambda * w3 * grad3;
-
-      return true;
-    }
-
-    public static bool EdgePointDistanceConstraint(
-      Vector3 p, float w,
-      Vector3 p0, float w0,
-      Vector3 p1, float w1,
-      float restDist,
-      float compressionStiffness,
-      float stretchStiffness,
-      out Vector3 corr,
-      out Vector3 corr0,
-      out Vector3 corr1)
-    {
-      corr = corr0 = corr1 = Vector3.zero;
-
-      Vector3 d = p1 - p0;
-      float t;
-      if ((p0 - p1).sqrMagnitude < eps * eps) t = 0.5f;
-      else
-      {
-        float d2 = Vector3.Dot(d, d);
-        t = Vector3.Dot(d, (p - p1)) / d2;
-        if (t < 0.0f) t = 0.0f;
-        else if (t > 1.0f) t = 1.0f;
-      }
-
-      // closest point on edge
-      Vector3 q = p0 + d*t;
-      Vector3 n = p - q;
-      float dist = n.magnitude;
-      Vector3.Normalize(n);
-      float C = dist - restDist;
-      float b0 = 1.0f - t;
-      float b1 = t;
-
-      Vector3 grad = n;
-      Vector3 grad0 = -n * b0;
-      Vector3 grad1 = -n * b1;
-
-      float s = w + w0 * b0 * b0 + w1 * b1 * b1;
-      if (s == 0.0f) return false;
-
-      s = C / s;
-      if (C < 0.0f) s *= compressionStiffness;
-      else s *= stretchStiffness;
-
-      if (s == 0.0f) return false;
-
-      corr = -s * w * grad;
-      corr0 = -s * w0 * grad0;
-      corr1 = -s * w1 * grad1;
-
-      return true;
-    }
-
-    public static bool TrianglePointDistanceConstraint(
+    public bool TrianglePointDistance(
       Vector3 p, float w,
       Vector3 p0, float w0,
       Vector3 p1, float w1,
@@ -436,8 +218,9 @@ namespace PositionBasedDynamics
       return true;
     }
 
+
   }
-}
+
 
 
 
@@ -665,7 +448,7 @@ namespace PositionBasedDynamics
          n1 = Vector3.Cross(e1, e2);
          d1 = -Vector3.Dot(n1, v0);
          // plane equation 1: N1.X+d1=0 */
- /*
+/*
          // put u0,u1,u2 into plane equation 1 to compute signed distances to the plane
          du0 = Vector3.Dot(n1, u0) + d1;
          du1 = Vector3.Dot(n1, u1) + d1;
@@ -765,4 +548,5 @@ namespace PositionBasedDynamics
  
          return !(isect1[1] < isect2[0] || isect2[1] < isect1[0]);
      }
- }*/
+ }
+*/

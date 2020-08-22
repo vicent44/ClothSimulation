@@ -12,10 +12,12 @@ public class Particles
     public float Mass { get {return mass;} set {mass = value;}}
     public float Area { get {return area;} set {area = value;}}
 
-    public bool isActive { get {return active;} set {active = value;}}
+    public bool isActive { get {return active;} set {active = value;}} //if(active) velocity = Vector3.zero;}}
 
     public int I { get {return i;}}
     public int J { get {return j;}}
+
+    public GameObject particleObject;
 
     protected Vector3 position;
     protected Vector3 prev;
@@ -51,6 +53,8 @@ public class Particles
         position = prev = p;
         velocity = Vector3.zero;
         active = true;
+        //obj = obje;
+
 
         i = ii;
         j = jj;
@@ -81,6 +85,15 @@ public class Particles
     public void AddPosition(Vector3 positionMod)
     {
         position += positionMod;
+    }
+
+    public void UpdateParticle(float dt)
+    {
+        float deltaTimeMass = (dt * dt) / mass;
+        var lastPosition = position; 
+        position = position * 2 - prev + deltaTimeMass * force;
+        prev = lastPosition;
+        velocity = (position - prev) / dt;        
     }
 
     /*public void Step()

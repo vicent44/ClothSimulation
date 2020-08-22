@@ -44,11 +44,11 @@ public class MeshGenerator : MonoBehaviour
     List<Springs> _springs;
     List<Triangles> _triangles;
     //For hash table
-
+/*
     public struct SPHash
     {
         public List<int> indices;
-    } 
+    } */
 
     Vector3 windforce;
 
@@ -72,6 +72,8 @@ public class MeshGenerator : MonoBehaviour
     Ray ray;
     RaycastHit hit;
 
+    public bool isPaused = true;
+
     void Start()
     {
         /*mesh = new Mesh();
@@ -88,6 +90,11 @@ public class MeshGenerator : MonoBehaviour
         //_esfere = new List<Transform>();
         _esfere = new List<GameObject>();
         //windforce = new Vector3();
+
+
+        var particleParent = new GameObject("particleParent");
+
+        //var particle = new GameObject();
 
         //float mass = massTotalCloth / (gridSize * gridSize);
         //float area = areaToalCloth / (gridSize * gridSize);
@@ -107,15 +114,26 @@ public class MeshGenerator : MonoBehaviour
                 //pos = j * gridSize + i;
                 jP = j * 0.2f;
                 iP = i * 0.2f;
-                var p = new Particles(new Vector3(jP,0.0f,iP), mass, pi, pj);
-                _particles.Add(p);
+                
+                //var p = new Particles(new Vector3(jP,0.0f,iP), mass, pi, pj);
+                var newP = ParticlesBehaviour.Create(new Vector3(jP,0.0f,iP), mass, pi, pj, esfereControl);
+                newP.transform.SetParent(particleParent.transform, false);
+                newP.transform.localPosition = new Vector3(jP,0.0f,iP);
+                newP.particles.Position = newP.transform.position;
+
+                //newP.transform.SetParent(particleParent, false);
+                //newP.transform.localPosition = new Vector3(jP,0.0f,iP);
+                //_esfere[pi].AddComponent<p>();
+                //p.particleObject = Instantiate(_esferePrefab, p.Position, Quaternion.identity);//AddComponent<SphereCollider>();//<SphereCollider>();
+                //_esfere.Add(newP);
+                _particles.Add(newP.particles);
                 //var obj = GameObject.Instantiate(_esferePrefab, new Vector3(jP,0.0f,iP), Quaternion.identity);
-                var obj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                obj.transform.localScale = Vector3.one * 0.1f;
-                obj.transform.position = p.Position;
+                //var obj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                //obj.transform.localScale = Vector3.one * 0.1f;
+                //obj.transform.position = p.Position;
                 //obj.AddComponent<Particles>();
                 //obj.gameObject.tag = "("+ jP.ToString() +" ,"+ y.ToString() +" ,"+ iP.ToString() +")";
-                _esfere.Add(obj);
+                //_esfere.Add(obj);
                 pi++;
             }
             pj++;
@@ -231,10 +249,11 @@ public class MeshGenerator : MonoBehaviour
             _particles[i].isActive = false;
         }*/
         _particles[0].isActive = false;
-        _particles[15].isActive = false;
+        _particles[8].isActive = false;
+        //_particles[3].isActive = false;
 
-        simulator = new Simulate(_particles, _springs, _triangles, windforce, plane);
-        intersec = new TriangleIntersection();
+        simulator = new Simulate(_particles, _springs, _triangles, windforce, plane, gridSize);
+        //intersec = new TriangleIntersection();
 
         mesh = new Mesh();
         GetComponent<MeshFilter>().mesh = mesh;
@@ -246,13 +265,46 @@ public class MeshGenerator : MonoBehaviour
 
     void FixedUpdate()
     {
-        int gridSize = gridSizeNew + gridSizeNew * (gridSizeNew - 1);
-        simulator.Update(Time.fixedDeltaTime, _triangles);
-
+        
+        /*if(Input.GetKey("left"))
+        {
+            Debug.Log("hola");
+            _particles[0].isActive = true;
+            _particles[0].AddPosition(new Vector3(0.01f, 0f, 0f));
+            //_particles[0].ResetResultantForce();
+            //_particles[0].Velocity = Vector3.zero;
+            
+            //_particles[0].ResetResultantForce();
+        }
+        if(Input.GetKey("right"))
+        {
+            _particles[0].isActive = true;
+            _particles[0].Position -= new Vector3(0.01f, 0f, 0f);
+        }
+        if(Input.GetKey("up"))
+        {
+            _particles[0].Position += new Vector3(0f, 0f, 0.01f);
+        }
+        if(Input.GetKey("down"))
+        {
+            _particles[0].Position -= new Vector3(0.1f, 0f, 0.01f);
+        }
+        */
+        //_particles[0].isActive = false;
+        if(!isPaused)
+        {
+            int gridSize = gridSizeNew + gridSizeNew * (gridSizeNew - 1);
+            simulator.Update(Time.fixedDeltaTime, _triangles);
+            UpdateMesh();
+        }
+        /*if(Input.GetKey("up"))
+        {
+            Debug.Log("hola");
+        }*/
         //Collision constrain
 
-        hash = new Hashing(gridSize, 1.0f/(float)gridSize, 2000);
-        SPHash[] spHash = new SPHash[2000];
+        /*hash = new Hashing(gridSize, 1.0f/(float)gridSize, 1723);
+        SPHash[] spHash = new SPHash[1723];
 
         for(int v = 0; v < _particles.Count; v++)
         {
@@ -282,33 +334,33 @@ public class MeshGenerator : MonoBehaviour
                     for(int sph = 0; sph < spHash[h].indices.Count; sph++)
                     {
                         int idx = spHash[h].indices[sph];
-                        if(idx != _particles[tri.indexTriA] && idx != _particles[tri.indexTriB] && idx != _particles[tri.indexTriC])
+                        if(idx != _particles[tri.indexTriA].I && idx != _particles[tri.indexTriB].I && idx != _particles[tri.indexTriC].I)
                         {
                             Vector3 p = _particles[idx].Position;
                             float w = _particles[idx].Mass;
 
                             Vector3 corr, corr0, corr1, corr2;
-                            if(TrianglePointDistanceConstraint(
+                            if(intersec.TrianglePointDistance(
                                 p, w,
                                 p0, w0,
                                 p1, w1,
                                 p2, w2,
-                                thickness, 1f, 0.0f,
+                                0.02f, 1f, 0.0f,
                                 out corr, out corr0, out corr1, out corr2))
                             {
-                                _particles[idx].Position += corr;
-                                _particles[tri.indexTriA].Position += corr0;
-                                _particles[tri.indexTriB].Position += corr1;
-                                _particles[tri.indexTriC].Position += corr2;
+                                Debug.Log("Collition");
+                                //_particles[idx].Position += corr;
+                                //_particles[tri.indexTriA].Position += corr0;
+                                //_particles[tri.indexTriB].Position += corr1;
+                                //_particles[tri.indexTriC].Position += corr2;
                             }
                         }
                     }
                 }
             }
-        }
+        }*/
 
-        UpdateMesh();
-
+        //_particles[0].isActive = false;
         /*for(int i = 1; i < gridSize; i++)
         {
             for(int j = 1; j <= 2 * (gridSize - 1); j++)
@@ -334,10 +386,10 @@ public class MeshGenerator : MonoBehaviour
         }*/
 
 
-        for(int i = 0; i < _particles.Count; i++)
+        /*for(int i = 0; i < _particles.Count; i++)
         {
             _esfere[i].transform.position = _particles[i].Position;
-        }
+        }*/
 
 
         //int gridSize = gridSizeNew + (gridSizeNew - 1);
@@ -370,23 +422,78 @@ public class MeshGenerator : MonoBehaviour
     }*/
 
     void FindMaxAge(List<Springs> _springs)
-{
-    float maxAge = 0f;
-    foreach (var p in _springs)
     {
-        var dis = p.particleA.Position - p.particleB.Position;
-        var dist = dis.magnitude;
-        if (dist > maxAge)
+        float maxAge = 0f;
+        foreach (var p in _springs)
         {
-            maxAge = dist;
+            var dis = p.particleA.Position - p.particleB.Position;
+            var dist = dis.magnitude;
+            if (dist > maxAge)
+            {
+                maxAge = dist;
+            }
         }
+        Debug.Log(maxAge);
     }
-    Debug.Log(maxAge);
-}
 
     void Update()
     {
+        if (Input.GetKeyDown(KeyCode.Space))
+            isPaused = !isPaused;
 
+        // Sets an anchor with right mouse click
+        if (Input.GetMouseButtonDown(1))
+        {
+            this.ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            if (Physics.Raycast(this.ray, out this.hit))
+            {
+                this.hit.collider.GetComponent<ParticlesBehaviour>().particles.isActive = false;
+            }
+
+            this.screenPoint = Camera.main.WorldToScreenPoint(this.transform.position);
+        }
+
+        // While left mouse click is held down you can drag particles around
+        if (Input.GetMouseButton(0))
+            {
+                var currentScreenPoint = new Vector3(Input.mousePosition.x, Input.mousePosition.y, this.screenPoint.z);
+                var currentPosition = Camera.main.ScreenToWorldPoint(currentScreenPoint);
+                this.hit.collider.GetComponent<ParticlesBehaviour>().particles.Position = currentPosition;
+                this.transform.position = currentPosition;
+                UpdateMesh();
+            }
+
+        // Unsets an anchor with middle mouse click
+        if (Input.GetMouseButtonDown(2))
+        {
+            this.ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            if (Physics.Raycast(this.ray, out this.hit))
+            {
+                this.hit.collider.GetComponent<ParticlesBehaviour>().particles.isActive = true;
+            }
+        }
+        //UpdateMesh();
+
+
+        /*var mouseRay = Camera.main.ScreenPointToRay(Input.mousePosition);
+
+        RaycastHit hitCollider;
+        if (Physics.Raycast(mouseRay, out hitCollider))
+        {
+            var particlesBehaviour = hitCollider.collider.gameObject.GetComponent<ParticlesBehaviour>();
+            if (particlesBehaviour)
+            {
+                if (Input.GetMouseButtonDown(0))
+                {
+                    particlesBehaviour.moveWithMouse = true;
+
+                    particlesBehaviour.wasKinematic = particlesBehaviour.particles.isActive;
+                    particlesBehaviour.particles.isActive = true;
+                }
+                if (!Input.GetMouseButton(0) && Input.GetKeyDown(KeyCode.P))
+                    particlesBehaviour.particles.isActive = !particlesBehaviour.particles.isActive;
+            }
+        }*/
     }
 
     void CreateShape ()

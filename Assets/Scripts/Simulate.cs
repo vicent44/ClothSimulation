@@ -10,13 +10,23 @@ public class Simulate
     Vector3 windForce;
     Transform plane;
 
-    public Simulate(List<Particles> particles, List<Springs> springs, List<Triangles> triangles, Vector3 windforce, Transform plane)
+    public struct SPHash
+    {
+        public List<int> indices;
+    }
+    TriangleIntersection intersec;
+    Hashing hash;
+    public int gridSize;
+
+    public Simulate(List<Particles> particles, List<Springs> springs, List<Triangles> triangles, Vector3 windforce, Transform plane, int gridSize)
     {
         this.particles = particles;
         this.springs = springs;
         this.triangles = triangles;
         this.windForce = windforce;
         this.plane = plane;
+        this.gridSize = gridSize;
+        //intersec = new TriangleIntersection();
     }
 
     public void Update(float dt, List<Triangles> triangles)
@@ -26,7 +36,7 @@ public class Simulate
         //IntegratorEuler(dt);
         IntegratorVerlet(dt);
         CheckPlaneCollitions();
-        //CheckSelfCollitions();
+        CheckSelfCollitions();
     }
 
     public void ComputeTotalForces()
@@ -79,11 +89,12 @@ public class Simulate
 
         foreach(var p in particles)
         {
-            float deltaTimeMass = (dt * dt) / p.Mass;
+            if(p.isActive) p.UpdateParticle(dt);
+            /*float deltaTimeMass = (dt * dt) / p.Mass;
             var lastPosition = p.Position; 
             p.Position = p.Position * 2 - p.Prev + deltaTimeMass * p.Force;
             p.Prev = lastPosition;
-            p.Velocity = (p.Position - p.Prev) / dt;
+            p.Velocity = (p.Position - p.Prev) / dt;*/
         }
     }
 
@@ -108,7 +119,7 @@ public class Simulate
                 //Firts 0.5 is coeficient of friction
                 //Second term is - kr * normalVelocity but kr = 0 
                 //because is perfect inelastic.
-                p.Velocity = Vector3.zero;//(1 - 0.9f) * tangencialVelocity;
+                p.Velocity = -normalVelocity;//Vector3.zero;//(1 - 0.9f) * tangencialVelocity;
                 p.ResetResultantForce();
             }
         }
@@ -116,13 +127,188 @@ public class Simulate
 
     void CheckSelfCollitions()
     {
-        /*for(int i = 0; i < ; i++)
-        {
-            for()
-            {
+        hash = new Hashing(gridSize, 1.0f/(float)gridSize, 1723);
+        SPHash[] spHash = new SPHash[1723];
 
+        for(int v = 0; v < particles.Count; v++)
+        {
+            int has = Mathf.Abs(hash.Hash(particles[v].Position));
+
+            if(spHash[has].indices == null) spHash[has].indices = new List<int>();
+            spHash[has].indices.Add(particles[v].I);
+        }
+
+        for(int t = 0; t < triangles.Count; t++)
+        {
+            var tri = triangles[t];
+            var p0 = particles[tri.indexTriA].Position;
+            var p1 = particles[tri.indexTriB].Position;
+            var p2 = particles[tri.indexTriC].Position;
+
+            float w0 = 1f/particles[tri.indexTriA].Mass;
+            float w1 = 1f/particles[tri.indexTriB].Mass;
+            float w2 = 1f/particles[tri.indexTriC].Mass;
+
+            List<int> hashes = hash.TriangleBoundingBoxHashes(p0, p1, p2);
+
+            for(int h = 0; h < hashes.Count; h++)
+            {
+                if(spHash[h].indices != null)
+                {
+                    for(int sph = 0; sph < spHash[h].indices.Count; sph++)
+                    {
+                        int idx = spHash[h].indices[sph];
+                        if(idx != particles[tri.indexTriA].I && idx != particles[tri.indexTriB].I && idx != particles[tri.indexTriC].I)
+                        {
+                            Vector3 p = particles[idx].Position;
+                            float w = particles[idx].Mass;
+
+                            Vector3 corr, corr0, corr1, corr2;
+                            if(TrianglePointDistance(
+                                p, w,
+                                p0, w0,
+                                p1, w1,
+                                p2, w2,
+                                0.05f, 1f, 0.0f,
+                                out corr, out corr0, out corr1, out corr2))
+                            {
+                                
+                                //Vector3 normalVeloci = Vector3.Dot(triangles[t].normTri, particles[idx].Velocity) * particles[idx].Velocity;
+                                //Vector3 tangencialVelocity = particles[idx].Velocity - normalVeloci;
+                                
+                                /*particles[idx].Velocity = Vector3.zero;
+                                particles[idx].ResetResultantForce();
+
+                                particles[tri.indexTriA].Velocity = Vector3.zero;
+                                particles[tri.indexTriA].ResetResultantForce();
+
+                                particles[tri.indexTriB].Velocity = Vector3.zero;
+                                particles[tri.indexTriB].ResetResultantForce();
+
+                                particles[tri.indexTriC].Velocity = Vector3.zero;
+                                particles[tri.indexTriC].ResetResultantForce();*/
+                                Debug.Log("Collition");
+                                particles[idx].Position += corr;
+                                particles[tri.indexTriA].Position += corr0;
+                                particles[tri.indexTriB].Position += corr1;
+                                particles[tri.indexTriC].Position += corr2;
+                            }
+                        }
+                    }
+                }
             }
-        }*/
+        }
+    }
+
+    public bool TrianglePointDistance(
+        Vector3 p, float w,
+        Vector3 p0, float w0,
+        Vector3 p1, float w1,
+        Vector3 p2, float w2,
+        float restDist,
+        float compressionStiffness,
+        float stretchStiffness,
+        out Vector3 corr,
+        out Vector3 corr0,
+        out Vector3 corr1,
+        out Vector3 corr2)
+    {
+        corr = corr0 = corr1 = corr2 = Vector3.zero;
+        // find barycentric coordinates of closest point on triangle
+
+        // for singular case
+        float b0 = 1.0f / 3.0f;
+        float b1 = b0;
+        float b2 = b0;
+
+        float a, b, c, d, e, f;
+        float det;
+
+        Vector3 d1 = p1 - p0;
+        Vector3 d2 = p2 - p0;
+        Vector3 pp0 = p - p0;
+        a = Vector3.Dot(d1, d1);
+        b = Vector3.Dot(d2, d1);
+        c = Vector3.Dot(pp0, d1);
+        d = b;
+        e = Vector3.Dot(d2, d2);
+        f = Vector3.Dot(pp0, d2);
+        det = a*e - b*d;
+
+        float s, t;
+        Vector3 dist;
+        float dist2;
+        if (det != 0.0f)
+        {
+            s = (c*e - b*f) / det;
+            t = (a*f - c*d) / det;
+            // inside triangle
+            b0 = 1.0f - s - t;
+            b1 = s;
+            b2 = t;
+            if (b0 < 0.0)
+            {
+                // on edge 1-2
+                dist = p2 - p1;
+                dist2 = Vector3.Dot(dist, dist);
+                t = (dist2 == 0.0f) ? 0.5f : Vector3.Dot(dist, (p - p1)) / dist2;
+                if (t < 0.0) t = 0.0f;	// on point 1
+                if (t > 1.0) t = 1.0f;	// on point 2
+                b0 = 0.0f;
+                b1 = (1.0f - t);
+                b2 = t;
+            }
+            else if (b1 < 0.0)
+            {
+                // on edge 2-0
+                dist = p0 - p2;
+                dist2 = Vector3.Dot(dist, dist);
+                t = (dist2 == 0.0f) ? 0.5f : Vector3.Dot(dist, (p - p2)) / dist2;
+                if (t < 0.0) t = 0.0f;	// on point 2
+                if (t > 1.0) t = 1.0f; // on point 0
+                b1 = 0.0f;
+                b2 = (1.0f - t);
+                b0 = t;
+            }
+            else if (b2 < 0.0)
+            {
+                // on edge 0-1
+                dist = p1 - p0;
+                dist2 = Vector3.Dot(dist, dist);
+                t = (dist2 == 0.0f) ? 0.5f : Vector3.Dot(dist, (p - p0)) / dist2;
+                if (t < 0.0) t = 0.0f;	// on point 0
+                if (t > 1.0) t = 1.0f;	// on point 1
+                b2 = 0.0f;
+                b0 = (1.0f - t);
+                b1 = t;
+            }
+        }
+        Vector3 q = p0 * b0 + p1 * b1 + p2 * b2;
+        Vector3 n = p - q;
+        float l = n.magnitude;
+        Vector3.Normalize(n);
+        float C = l - restDist;
+        Vector3 grad = n;
+        Vector3 grad0 = -n * b0;
+        Vector3 grad1 = -n * b1;
+        Vector3 grad2 = -n * b2;
+
+        s = w + w0 * b0*b0 + w1 * b1*b1 + w2 * b2*b2;
+        if (s == 0.0f)
+        return false;
+
+        s = C / s;
+        if (C < 0.0f) s *= compressionStiffness;
+        else s *= stretchStiffness;
+
+        if (s == 0.0f) return false;
+
+        corr = -s * w * grad;
+        corr0 = -s * w0 * grad0;
+        corr1 = -s * w1 * grad1;
+        corr2 = -s * w2 * grad2;
+
+        return true;
     }
 
     /*void ComputeForces(Particles a, Particles b, float elast, float dampi, float length)

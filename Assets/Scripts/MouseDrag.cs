@@ -38,7 +38,7 @@ public class MouseDrag : MonoBehaviour
                 this.ray = Camera.main.ScreenPointToRay(Input.mousePosition);
                 if (Physics.Raycast(this.ray, out this.hit))
                 {
-                    this.hit.collider.GetComponent<Particles>().isActive = false;
+                    this.hit.collider.GetComponent<ParticlesBehaviour>().particles.isActive = false;
                 }
 
                 this.screenPoint = Camera.main.WorldToScreenPoint(this.transform.position);
@@ -49,7 +49,7 @@ public class MouseDrag : MonoBehaviour
                 {
                     var currentScreenPoint = new Vector3(Input.mousePosition.x, Input.mousePosition.y, this.screenPoint.z);
                     var currentPosition = Camera.main.ScreenToWorldPoint(currentScreenPoint);
-                    this.hit.collider.GetComponent<Particles>().Position = currentPosition;
+                    this.hit.collider.GetComponent<ParticlesBehaviour>().particles.Position = currentPosition;
                     this.transform.position = currentPosition;
                 }
 
@@ -59,7 +59,7 @@ public class MouseDrag : MonoBehaviour
                 this.ray = Camera.main.ScreenPointToRay(Input.mousePosition);
                 if (Physics.Raycast(this.ray, out this.hit))
                 {
-                    this.hit.collider.GetComponent<Particles>().isActive = true;
+                    this.hit.collider.GetComponent<ParticlesBehaviour>().particles.isActive = true;
                 }
             }
         }
