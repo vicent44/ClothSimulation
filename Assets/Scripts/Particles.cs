@@ -12,7 +12,7 @@ public class Particles
     public float Mass { get {return mass;} set {mass = value;}}
     public float Area { get {return area;} set {area = value;}}
 
-    public bool isActive { get {return active;} set {active = value;}} //if(active) velocity = Vector3.zero;}}
+    public bool isActive { get {return active;} set {active = value; if(active) velocity = Vector3.zero;}}
 
     public int I { get {return i;}}
     public int J { get {return j;}}

@@ -20,6 +20,7 @@ public class MeshGenerator : MonoBehaviour
     [SerializeField] float massTotalCloth = 12f;
     [SerializeField] float clothDensity = 1f;
 
+
     //[SerializeField] bool useGravity = true;
     //[SerializeField] float gravity = 1f;
 
@@ -32,8 +33,11 @@ public class MeshGenerator : MonoBehaviour
 
     [SerializeField] float windModule = 1f;
 
-    [SerializeField] float elasticConstant = 1f;
-    [SerializeField] float dampingConstant = 1f;
+    //[SerializeField] float elasticConstant = 1f;
+    [SerializeField] float elasticConstantStructural = 20f;
+    [SerializeField] float elasticConstantShear = 20f;
+    [SerializeField] float elasticConstantBend = 20f;
+    [SerializeField] float dampingConstant = 0.25f;
 
     Simulate simulator;
     TriangleIntersection intersec;
@@ -157,7 +161,7 @@ public class MeshGenerator : MonoBehaviour
                 var c = _particles[index];
                 var right = _particles[index + 1];
                 //Debug.Log(index);
-                var re = new Springs(c, right, elasticConstant, dampingConstant, 1);
+                var re = new Springs(c, right, elasticConstantStructural, dampingConstant, 1);
                 //c.Connect(re);
                 _springs.Add(re);
             }
@@ -173,7 +177,7 @@ public class MeshGenerator : MonoBehaviour
                 var c = _particles[index_1];
                 var right = _particles[index_2];
 
-                var re = new Springs(c, right, elasticConstant, dampingConstant, 1);
+                var re = new Springs(c, right, elasticConstantStructural, dampingConstant, 1);
                 //c.Connect(re);
                 _springs.Add(re);
             }
@@ -189,7 +193,7 @@ public class MeshGenerator : MonoBehaviour
                 var c = _particles[index_1];
                 var bot = _particles[index_2];
 
-                var re = new Springs(c, bot, elasticConstant, dampingConstant, 2);
+                var re = new Springs(c, bot, elasticConstantShear, dampingConstant, 2);
                 //c.Connect(re);
                 _springs.Add(re);
             }
@@ -205,7 +209,7 @@ public class MeshGenerator : MonoBehaviour
                 var c = _particles[index_1];
                 var top = _particles[index_2];
                 //Debug.Log(index_1);
-                var re = new Springs(c, top, elasticConstant, dampingConstant, 2);
+                var re = new Springs(c, top, elasticConstantShear, dampingConstant, 2);
                 //c.Connect(re);
                 _springs.Add(re);
             }
@@ -221,7 +225,7 @@ public class MeshGenerator : MonoBehaviour
                 var c = _particles[index_1];
                 var left = _particles[index_2];
 
-                var re = new Springs(c, left, elasticConstant, dampingConstant, 3);
+                var re = new Springs(c, left, elasticConstantBend, dampingConstant, 3);
                 //c.Connect(re);
                 _springs.Add(re);
             }
@@ -237,7 +241,7 @@ public class MeshGenerator : MonoBehaviour
                 var c = _particles[index_1];
                 var left = _particles[index_2];
 
-                var re = new Springs(c, left, elasticConstant, dampingConstant, 3);
+                var re = new Springs(c, left, elasticConstantBend, dampingConstant, 3);
                 //c.Connect(re);
                 _springs.Add(re);
             }
@@ -453,15 +457,48 @@ public class MeshGenerator : MonoBehaviour
             this.screenPoint = Camera.main.WorldToScreenPoint(this.transform.position);
         }
 
+        if(Input.GetKey("left"))
+        {
+            //Debug.Log("hola");
+            //_particles[0].isActive = true;
+            this.hit.collider.GetComponent<ParticlesBehaviour>().particles.AddPosition(new Vector3(0.05f, 0f, 0f));
+            //_particles[0].ResetResultantForce();
+            //_particles[0].Velocity = Vector3.zero;
+            //_particles[0].isActive = false;
+            
+            //_particles[0].ResetResultantForce();
+        }
+        if(Input.GetKey("right"))
+        {
+            //_particles[0].isActive = true;
+            this.hit.collider.GetComponent<ParticlesBehaviour>().particles.AddPosition(new Vector3(-0.05f, 0f, 0f));
+        }
+        if(Input.GetKey("up"))
+        {
+            this.hit.collider.GetComponent<ParticlesBehaviour>().particles.AddPosition(new Vector3(0f, 0f, 0.05f));
+        }
+        if(Input.GetKey("down"))
+        {
+            this.hit.collider.GetComponent<ParticlesBehaviour>().particles.AddPosition(new Vector3(0f, 0f, -0.05f));
+        }
+        if(Input.GetKey("w"))
+        {
+            this.hit.collider.GetComponent<ParticlesBehaviour>().particles.AddPosition(new Vector3(0f, 0.05f, 0f));
+        }
+        if(Input.GetKey("s"))
+        {
+            this.hit.collider.GetComponent<ParticlesBehaviour>().particles.AddPosition(new Vector3(0f, -0.05f, 0f));
+        }
+
         // While left mouse click is held down you can drag particles around
-        if (Input.GetMouseButton(0))
+        /*if (Input.GetMouseButton(0))
             {
                 var currentScreenPoint = new Vector3(Input.mousePosition.x, Input.mousePosition.y, this.screenPoint.z);
                 var currentPosition = Camera.main.ScreenToWorldPoint(currentScreenPoint);
                 this.hit.collider.GetComponent<ParticlesBehaviour>().particles.Position = currentPosition;
                 this.transform.position = currentPosition;
                 UpdateMesh();
-            }
+            }*/
 
         // Unsets an anchor with middle mouse click
         if (Input.GetMouseButtonDown(2))

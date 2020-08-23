@@ -35,7 +35,7 @@ public class Simulate
         ComputeTotalForces();
         //IntegratorEuler(dt);
         IntegratorVerlet(dt);
-        CheckPlaneCollitions();
+        CheckPlaneCollitions(dt);
         CheckSelfCollitions();
     }
 
@@ -98,7 +98,7 @@ public class Simulate
         }
     }
 
-    void CheckPlaneCollitions()
+    void CheckPlaneCollitions(float dt)
     {
         foreach(var p in particles)
         {
@@ -115,12 +115,15 @@ public class Simulate
                 p.Position -= dot * normalPlane;
                 Vector3 normalVelocity = Vector3.Dot(normalPlane,p.Velocity) * p.Velocity;
                 Vector3 tangencialVelocity = p.Velocity - normalVelocity;
-                
+                Vector3 normalForce = Vector3.Dot(p.Force, normalPlane) * normalPlane;
+                Vector3 tangencialForce = p.Force - normalForce;
                 //Firts 0.5 is coeficient of friction
                 //Second term is - kr * normalVelocity but kr = 0 
                 //because is perfect inelastic.
-                p.Velocity = -normalVelocity;//Vector3.zero;//(1 - 0.9f) * tangencialVelocity;
-                p.ResetResultantForce();
+                //p.Velocity = Vector3.zero;//-normalVelocity;//Vector3.zero;//(1 - 0.9f) * tangencialVelocity;
+                p.AddForce(tangencialForce - 0.5f * normalForce.magnitude * (tangencialForce/tangencialForce.magnitude));
+                //p.AddForce(- p.Mass * tangencialVelocity/dt);
+                //p.ResetResultantForce();
             }
         }
     }
@@ -187,7 +190,11 @@ public class Simulate
 
                                 particles[tri.indexTriC].Velocity = Vector3.zero;
                                 particles[tri.indexTriC].ResetResultantForce();*/
-                                Debug.Log("Collition");
+                                //Debug.Log("Collition");
+                                /*particles[idx].Position += corr;
+                                particles[tri.indexTriA].Position += corr0;
+                                particles[tri.indexTriB].Position += corr1;
+                                particles[tri.indexTriC].Position += corr2;*/
                                 particles[idx].Position += corr;
                                 particles[tri.indexTriA].Position += corr0;
                                 particles[tri.indexTriB].Position += corr1;
@@ -303,10 +310,14 @@ public class Simulate
 
         if (s == 0.0f) return false;
 
-        corr = -s * w * grad;
+        /*corr = -s * w * grad;
         corr0 = -s * w0 * grad0;
         corr1 = -s * w1 * grad1;
-        corr2 = -s * w2 * grad2;
+        corr2 = -s * w2 * grad2;*/
+        corr = 
+        corr0 = 
+        corr1 =
+        corr2 = 
 
         return true;
     }

@@ -24,6 +24,8 @@ public class ParticlesBehaviour : MonoBehaviour
     void Update()
     {
         transform.position = _particle.Position;
+        //var triangle = GetComponent<MeshGenerator>();
+
         /*if (!_moveWithMouse)
         {
             previousMousePosition = Vector3.zero;
