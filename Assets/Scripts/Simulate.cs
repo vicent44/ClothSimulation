@@ -314,10 +314,10 @@ public class Simulate
         corr0 = -s * w0 * grad0;
         corr1 = -s * w1 * grad1;
         corr2 = -s * w2 * grad2;*/
-        corr = 
-        corr0 = 
-        corr1 =
-        corr2 = 
+        corr = -n;
+        corr0 = n * b0;
+        corr1 = n * b1;
+        corr2 = n * b2;
 
         return true;
     }
