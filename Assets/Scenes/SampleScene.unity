@@ -342,12 +342,13 @@ MonoBehaviour:
   iterations: 1
   massTotalCloth: 10
   clothDensity: 1
-  windDirection: {x: 0, y: 0, z: 1}
-  windModule: 50
+  windDirection: {x: 0, y: 0, z: 0}
+  windModule: 10
   elasticConstantStructural: 20
   elasticConstantShear: 20
   elasticConstantBend: 10
   dampingConstant: 0.25
+  deltaTimeStep: 0.02
   esfereControl: {fileID: 6907724091159522119, guid: 272305273b44d2bf5a073c6852983f2e,
     type: 3}
   plane: {fileID: 536771667}

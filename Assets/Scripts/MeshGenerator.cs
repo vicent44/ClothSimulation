@@ -43,6 +43,9 @@ public class MeshGenerator : MonoBehaviour
     TriangleIntersection intersec;
     Hashing hash;
 
+    float timePassed = 0.0f;
+    public float deltaTimeStep = 0.02f;
+
     //Triangles triangle;
     List<Particles> _particles;
     List<Springs> _springs;
@@ -295,12 +298,15 @@ public class MeshGenerator : MonoBehaviour
         }
         */
         //_particles[0].isActive = false;
-        if(!isPaused)
+        /*timePassed += Time.fixedDeltaTime;
+        if(timePassed >= deltaTimeStep) timePassed = 0.0f;
+        if(!isPaused && timePassed == 0.0f)
         {
             int gridSize = gridSizeNew + gridSizeNew * (gridSizeNew - 1);
-            simulator.Update(Time.fixedDeltaTime, _triangles);
+            simulator.Update(deltaTimeStep, _triangles);
             UpdateMesh();
-        }
+            Debug.Log(deltaTimeStep);
+        }*/
         /*if(Input.GetKey("up"))
         {
             Debug.Log("hola");
@@ -442,6 +448,15 @@ public class MeshGenerator : MonoBehaviour
 
     void Update()
     {
+        timePassed += Time.deltaTime;
+        if(timePassed >= deltaTimeStep) timePassed = 0.0f;
+        if(!isPaused && timePassed == 0.0f)
+        {
+            int gridSize = gridSizeNew + gridSizeNew * (gridSizeNew - 1);
+            simulator.Update(deltaTimeStep, _triangles);
+            UpdateMesh();
+            Debug.Log(deltaTimeStep);
+        }
         if (Input.GetKeyDown(KeyCode.Space))
             isPaused = !isPaused;
 
