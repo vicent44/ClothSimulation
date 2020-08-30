@@ -192,7 +192,7 @@ public class Simulate
 
                                 particles[tri.indexTriC].Velocity = Vector3.zero;
                                 particles[tri.indexTriC].ResetResultantForce();*/
-                                Debug.Log("Collition");
+                                //Debug.Log("Collition");
                                 /*particles[idx].Position += corr;
                                 particles[tri.indexTriA].Position += corr0;
                                 particles[tri.indexTriB].Position += corr1;
@@ -221,7 +221,7 @@ public class Simulate
                                 //particles[tri.indexTriC].AddForce(w0/2.0f * );
                                 
 
-                                particles[idx].Velocity = -normalVelocity0;//tangencialVelocity0 - 0.5f * normalVelocity0.magnitude * (tangencialVelocity0/tangencialVelocity0.magnitude) - normalVelocity0;//corr;
+                                particles[idx].Velocity =Vector3.zero; //-normalVelocity0;//tangencialVelocity0 - 0.5f * normalVelocity0.magnitude * (tangencialVelocity0/tangencialVelocity0.magnitude) - normalVelocity0;//corr;
                                 //particles[tri.indexTriA].Velocity = normalVelocity1;//-1.0f * (tangencialVelocity1 - 0.5f * normalVelocity1.magnitude * (tangencialVelocity1/tangencialVelocity1.magnitude) - normalVelocity1);
                                 //particles[tri.indexTriB].Velocity = normalVelocity2;//-1.0f * (tangencialVelocity2 - 0.5f * normalVelocity2.magnitude * (tangencialVelocity2/tangencialVelocity2.magnitude) - normalVelocity2);
                                 //particles[tri.indexTriC].Velocity = normalVelocity3;//-1.0f * (tangencialVelocity3 - 0.5f * normalVelocity3.magnitude * (tangencialVelocity3/tangencialVelocity3.magnitude) - normalVelocity3);                                
@@ -366,9 +366,9 @@ public class Simulate
         corr1 = -s * w1 * grad1;
         corr2 = -s * w2 * grad2;*/
         corr = -n;
-        corr0 = n;// * b0;
-        corr1 = n;// * b1;
-        corr2 = n;// * b2;
+        corr0 = n * b0;
+        corr1 = n * b1;
+        corr2 = n * b2;
 
         val0 = b0;
         val1 = b1;

@@ -455,7 +455,7 @@ public class MeshGenerator : MonoBehaviour
             int gridSize = gridSizeNew + gridSizeNew * (gridSizeNew - 1);
             simulator.Update(deltaTimeStep, _triangles);
             UpdateMesh();
-            Debug.Log(deltaTimeStep);
+            //Debug.Log(deltaTimeStep);
         }
         if (Input.GetKeyDown(KeyCode.Space))
             isPaused = !isPaused;

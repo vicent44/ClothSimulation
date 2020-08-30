@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static System.Math;
+
 
 public class Springs
 {
@@ -41,6 +43,26 @@ public class Springs
             var f = (dirnor - restLength) / dirnor;
             if(a.isActive) a.Position -= 0.5f * direction1 * f;
             if(b.isActive) b.Position += 0.5f * direction1 * f;
+
+        //Prova de lo del 10%
+        /*Vector3 direction2 = a.Position - b.Position;
+        Vector3 direction3 = a.Prev - b.Prev;
+        var dirnorm2 = direction2.magnitude;
+        var dirnorm3 = direction3.magnitude;
+        var dife = Abs(dirnorm2 - dirnorm3);
+        //Debug.Log(dife);
+
+        if(dife > restLength * 1.2f)
+        {
+            if(a.isActive) a.Position = a.restLength * 1.2f;
+            if(b.isActive) b.Position = ;            
+        }    
+        if(dife < restLength * 0.90f)
+        {
+            if(a.isActive) a.Position = ;
+            if(b.isActive) b.Position = ;
+        }*/
+
 
         Vector3 direction = a.Position - b.Position;
 
