@@ -103,9 +103,13 @@ public class MeshGenerator : MonoBehaviour
 
         //var particle = new GameObject();
 
+        float area = 0.2f * (gridSize - 1) * 0.2f * (gridSize - 1);
+
         //float mass = massTotalCloth / (gridSize * gridSize);
         //float area = areaToalCloth / (gridSize * gridSize);
-        float mass = 0.1f;
+        //float mass = 0.1f;
+        float massTotal = clothDensity * area;
+        float mass = massTotal / (gridSize * gridSize);
 
         //int pos = 0;
         float jP = 0;
@@ -146,7 +150,7 @@ public class MeshGenerator : MonoBehaviour
             pj++;
         }
         float distBetwenParticles = (_particles[0].Position - _particles[1].Position).magnitude;
-        float area = (distBetwenParticles * distBetwenParticles * (gridSize - 1) * (gridSize - 1)) / (gridSize * gridSize);
+        //float area = (distBetwenParticles * distBetwenParticles * (gridSize - 1) * (gridSize - 1)) / (gridSize * gridSize);
         //var w = new WindForce(new Vector3(windxDirection, windyDirection, windzDirection) , windModule, area, clothDensity);
         //windforce = w.WindTotalForce;
         //windforce = new Vector3((float)windxDirection, (float)windyDirection, (float)windzDirection) * windModule * area * clothDensity;
