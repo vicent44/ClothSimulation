@@ -17,7 +17,7 @@ public class MeshGenerator : MonoBehaviour
 
     //[SerializeField] float areaTotalCloth = 12f;
 
-    [SerializeField] float massTotalCloth = 12f;
+    //[SerializeField] float massTotalCloth = 12f;
     [SerializeField] float clothDensity = 1f;
 
 
@@ -57,7 +57,7 @@ public class MeshGenerator : MonoBehaviour
         public List<int> indices;
     } */
 
-    Vector3 windforce;
+    Vector3 winddirectiondensity;
 
     //[SerializeField] Transform control;
     //[SerializeField] Transform _esferePrefab;
@@ -117,7 +117,7 @@ public class MeshGenerator : MonoBehaviour
         int pi = 0;
         int pj = 0;
         //float y = 0;
-        int indexat = 0;
+        //int indexat = 0;
         for(int i = 0; i < gridSize; i++)
         {
             for(int j = 0; j < gridSize; j++)
@@ -155,7 +155,7 @@ public class MeshGenerator : MonoBehaviour
         //windforce = w.WindTotalForce;
         //windforce = new Vector3((float)windxDirection, (float)windyDirection, (float)windzDirection) * windModule * area * clothDensity;
         //windforce.x = (float)windxDirection * windModule * area * clothDensity;
-        windforce = windDirection * windModule * area * clothDensity;
+        winddirectiondensity = windDirection * windModule * clothDensity;
         //Debug.Log(windforce.z);
         //Springs
 
@@ -263,7 +263,7 @@ public class MeshGenerator : MonoBehaviour
         _particles[8].isActive = false;
         //_particles[3].isActive = false;
 
-        simulator = new Simulate(_particles, _springs, _triangles, windforce, plane, gridSize);
+        simulator = new Simulate(_particles, _springs, _triangles, winddirectiondensity, plane, gridSize);
         //intersec = new TriangleIntersection();
 
         mesh = new Mesh();
@@ -457,6 +457,7 @@ public class MeshGenerator : MonoBehaviour
         if(!isPaused && timePassed == 0.0f)
         {
             int gridSize = gridSizeNew + gridSizeNew * (gridSizeNew - 1);
+            //int gridSize = gridSizeNew + (gridSizeNew - 1);
             simulator.Update(deltaTimeStep, _triangles);
             UpdateMesh();
             //Debug.Log(deltaTimeStep);
@@ -611,6 +612,7 @@ public class MeshGenerator : MonoBehaviour
 
     void UpdateMesh()
     {
+        //int gridSize = gridSizeNew + (gridSizeNew - 1);
         int gridSize = gridSizeNew + gridSizeNew * (gridSizeNew - 1);
         mesh.Clear();
         int posi = 0;

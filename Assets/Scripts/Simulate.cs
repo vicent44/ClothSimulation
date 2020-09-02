@@ -1,13 +1,14 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 public class Simulate
 {
     List<Particles> particles;
     List<Springs> springs;
     List<Triangles> triangles;
-    Vector3 windForce;
+    Vector3 winddirectiondensity;
     Transform plane;
 
     public struct SPHash
@@ -18,12 +19,12 @@ public class Simulate
     Hashing hash;
     public int gridSize;
 
-    public Simulate(List<Particles> particles, List<Springs> springs, List<Triangles> triangles, Vector3 windforce, Transform plane, int gridSize)
+    public Simulate(List<Particles> particles, List<Springs> springs, List<Triangles> triangles, Vector3 winddirectiondensity, Transform plane, int gridSize)
     {
         this.particles = particles;
         this.springs = springs;
         this.triangles = triangles;
-        this.windForce = windforce;
+        this.winddirectiondensity = winddirectiondensity;
         this.plane = plane;
         this.gridSize = gridSize;
         //intersec = new TriangleIntersection();
@@ -33,6 +34,7 @@ public class Simulate
     {
         this.triangles = triangles;
         ComputeTotalForces();
+        WindForce();
         //IntegratorEuler(dt);
         IntegratorVerlet(dt);
         CheckPlaneCollitions(dt);
@@ -50,7 +52,7 @@ public class Simulate
                 //var wind = 
 
                 p.AddForce(gravity);
-                p.AddForce(windForce);
+                //p.AddForce(windForce);
             }
         }
         /*for(int i = 0; i < particles.Count; i++)
@@ -153,7 +155,7 @@ public class Simulate
             float w2 = 1f/particles[tri.indexTriC].Mass;
 
             List<int> hashes = hash.TriangleBoundingBoxHashes(p0, p1, p2);
-
+    
             for(int h = 0; h < hashes.Count; h++)
             {
                 if(spHash[h].indices != null)
@@ -173,7 +175,7 @@ public class Simulate
                                 p0, w0,
                                 p1, w1,
                                 p2, w2,
-                                0.02f, 5000f, 0.0f,
+                                0.04f, 500f, 0.0f,
                                 out corr, out corr0, out corr1, out corr2, out normalTri,
                                 out val0, out val1, out val2))
                             {
@@ -221,10 +223,10 @@ public class Simulate
                                 //particles[tri.indexTriC].AddForce(((3f*w/4.0f) * (normalVelocity3 - particles[tri.indexTriC].Velocity))/0.02f);
                                 
 
-                                particles[idx].Velocity = Vector3.zero;//-normalVelocity0; //tangencialVelocity0 - 0.5f * normalVelocity0.magnitude * (tangencialVelocity0/tangencialVelocity0.magnitude) - normalVelocity0;//corr;
-                                particles[tri.indexTriA].Velocity = Vector3.zero;//-normalVelocity1;//1.0f * (tangencialVelocity1 - 0.5f * normalVelocity1.magnitude * (tangencialVelocity1/tangencialVelocity1.magnitude) - normalVelocity1);
-                                particles[tri.indexTriB].Velocity = Vector3.zero;//-normalVelocity2;//1.0f * (tangencialVelocity2 - 0.5f * normalVelocity2.magnitude * (tangencialVelocity2/tangencialVelocity2.magnitude) - normalVelocity2);
-                                particles[tri.indexTriC].Velocity = Vector3.zero;//-normalVelocity3;//1.0f * (tangencialVelocity3 - 0.5f * normalVelocity3.magnitude * (tangencialVelocity3/tangencialVelocity3.magnitude) - normalVelocity3);                                
+                                particles[idx].Velocity = -normalVelocity0; //tangencialVelocity0 - 0.5f * normalVelocity0.magnitude * (tangencialVelocity0/tangencialVelocity0.magnitude) - normalVelocity0;//corr;
+                                particles[tri.indexTriA].Velocity = -normalVelocity1;//1.0f * (tangencialVelocity1 - 0.5f * normalVelocity1.magnitude * (tangencialVelocity1/tangencialVelocity1.magnitude) - normalVelocity1);
+                                particles[tri.indexTriB].Velocity = -normalVelocity2;//1.0f * (tangencialVelocity2 - 0.5f * normalVelocity2.magnitude * (tangencialVelocity2/tangencialVelocity2.magnitude) - normalVelocity2);
+                                particles[tri.indexTriC].Velocity = -normalVelocity3;//1.0f * (tangencialVelocity3 - 0.5f * normalVelocity3.magnitude * (tangencialVelocity3/tangencialVelocity3.magnitude) - normalVelocity3);                                
 
                                 //Force
                                 Vector3 normalForce0 = Vector3.Dot(normalTri, particles[idx].Force) * normalTri;
@@ -340,11 +342,11 @@ public class Simulate
                 b1 = t;
             }
         }
-        Vector3 q = p0 * b0 + p1 * b1 + p2 * b2;
-        //normalTri = q;
-        Vector3 n = p - q;
-        float l = n.magnitude;
-        Vector3.Normalize(n);
+        Vector3 q = p0 * b0 + p1 * b1 + p2 * b2; //Point of baricentric
+
+        Vector3 n = p - q; //Distance between point baricentric and node
+        float l = n.magnitude; //Distance in magnitude
+        Vector3.Normalize(n); //Direction where the point is from the surface of the triangle
         float C = l - restDist;
         Vector3 grad = n;
         Vector3 grad0 = -n * b0;
@@ -375,6 +377,21 @@ public class Simulate
         val2 = b2;
 
         return true;
+    }
+
+    void WindForce()
+    {
+        foreach(var t in triangles)
+        {
+            //Vector3 normal = t.normTri;
+            //Vector3 forcewind = normal * Vector3.Dot(normal, windDirection);
+            Vector3 inter = Vector3.Cross(t.posTriA - t.posTriC, t.posTriB - t.posTriC);
+            float areatriangle = 0.5f * (float)Math.Sqrt(Vector3.Dot(inter, inter));
+            Vector3 forceTriangle = areatriangle * winddirectiondensity;
+            particles[t.indexTriA].AddForce(forceTriangle/3.0f);
+            particles[t.indexTriB].AddForce(forceTriangle/3.0f);
+            particles[t.indexTriC].AddForce(forceTriangle/3.0f);
+        }
     }
 
     /*void ComputeForces(Particles a, Particles b, float elast, float dampi, float length)
