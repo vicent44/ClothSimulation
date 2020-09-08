@@ -39,6 +39,7 @@ public class Simulate
         IntegratorVerlet(dt);
         CheckPlaneCollitions(dt);
         CheckSelfCollitions();
+        //IntegratorVerlet(dt);
     }
 
     public void ComputeTotalForces()
@@ -122,8 +123,9 @@ public class Simulate
                 //Firts 0.5 is coeficient of friction
                 //Second term is - kr * normalVelocity but kr = 0 
                 //because is perfect inelastic.
+                p.Position = p.Position - dt * (tangencialVelocity-0.1f*normalVelocity.magnitude*(tangencialVelocity/tangencialVelocity.magnitude)-0.7f*normalVelocity);
                 p.Velocity = Vector3.zero;//tangencialVelocity; // -normalVelocity;//Vector3.zero;//(1 - 0.9f) * tangencialVelocity;
-                p.AddForce(tangencialForce - 0.5f * normalForce.magnitude * (tangencialForce/tangencialForce.magnitude));
+                //p.AddForce(tangencialForce - 0.5f * normalForce.magnitude * (tangencialForce/tangencialForce.magnitude));
                 //p.AddForce(- p.Mass * tangencialVelocity/dt);
                 //p.ResetResultantForce();
             }
@@ -175,7 +177,7 @@ public class Simulate
                                 p0, w0,
                                 p1, w1,
                                 p2, w2,
-                                0.04f, 500f, 0.0f,
+                                0.02f, 500f, 0.0f,
                                 out corr, out corr0, out corr1, out corr2, out normalTri,
                                 out val0, out val1, out val2))
                             {
@@ -195,16 +197,31 @@ public class Simulate
                                 particles[tri.indexTriC].Velocity = Vector3.zero;
                                 particles[tri.indexTriC].ResetResultantForce();*/
                                 Debug.Log(particles[idx].Position);
-                                /*particles[idx].Position += corr;
-                                particles[tri.indexTriA].Position += corr0;
-                                particles[tri.indexTriB].Position += corr1;
-                                particles[tri.indexTriC].Position += corr2;*/
+                                //particles[idx].Position += corr;
+                                //particles[tri.indexTriA].Position += corr0;
+                                //particles[tri.indexTriB].Position += corr1;
+                                //particles[tri.indexTriC].Position += corr2;
 
+                                float doti = Vector3.Dot(normalTri, corr);
+                                float doti0 = Vector3.Dot(normalTri, corr0);
+                                float doti1 = Vector3.Dot(normalTri, corr1);
+                                float doti2 = Vector3.Dot(normalTri, corr2);
+                                particles[idx].Position -= doti*normalTri;
+                                particles[tri.indexTriA].Position -= doti0*normalTri;
+                                particles[tri.indexTriB].Position -= doti1*normalTri;
+                                particles[tri.indexTriC].Position -= doti2*normalTri;
+                               
+
+                                /*Vector3 vel = particles[idx].Velocity + corr;
+                                Vector3 vel0 = particles[tri.indexTriA].Velocity + corr0;
+                                Vector3 vel1 = particles[tri.indexTriB].Velocity + corr1;
+                                Vector3 vel2 = particles[tri.indexTriC].Velocity + corr2;
+                                
                                 //Position
-                                particles[idx].Position += corr;
-                                particles[tri.indexTriA].Position += corr0;
-                                particles[tri.indexTriB].Position += corr1;
-                                particles[tri.indexTriC].Position += corr2;
+                                particles[idx].Position = particles[idx].Prev + 0.02f * vel;
+                                particles[tri.indexTriA].Position = particles[tri.indexTriA].Prev + 0.02f * vel0; 
+                                particles[tri.indexTriB].Position = particles[tri.indexTriB].Prev + 0.02f * vel1;
+                                particles[tri.indexTriC].Position = particles[tri.indexTriC].Prev + 0.02f * vel2;*/
 
                                 //Velocity
                                 Vector3 normalVelocity0 = Vector3.Dot(normalTri, particles[idx].Velocity) * normalTri;
@@ -217,16 +234,48 @@ public class Simulate
                                 Vector3 tangencialVelocity2 = particles[tri.indexTriB].Velocity - normalVelocity0;
                                 Vector3 tangencialVelocity3 = particles[tri.indexTriC].Velocity - normalVelocity0;
 
-                                //particles[idx].AddForce(((3f*w/4.0f) * (-normalVelocity0 - particles[idx].Velocity))/0.02f); //* ( (tangencialVelocity0 - 0.6f * normalVelocity0.magnitude * (tangencialVelocity0/tangencialVelocity0.magnitude) - normalVelocity0) - particles[idx].Velocity));
-                                //particles[tri.indexTriA].AddForce(((3f*w/4.0f) * (normalVelocity1 - particles[tri.indexTriA].Velocity))/0.02f);
-                                //particles[tri.indexTriB].AddForce(((3f*w/4.0f) * (normalVelocity2 - particles[tri.indexTriB].Velocity))/0.02f);
-                                //particles[tri.indexTriC].AddForce(((3f*w/4.0f) * (normalVelocity3 - particles[tri.indexTriC].Velocity))/0.02f);
+                                Vector3 velocity0 = - normalVelocity0;
+                                Vector3 velocity1 = - normalVelocity1;
+                                Vector3 velocity2 = - normalVelocity2;
+                                Vector3 velocity3 = - normalVelocity3;
+
+                                //Position
+                                /*particles[idx].Position = particles[idx].Position + 0.02f *velocity0;
+                                particles[tri.indexTriA].Position = particles[tri.indexTriA].Position - 0.02f *velocity1; 
+                                particles[tri.indexTriB].Position = particles[tri.indexTriA].Position - 0.02f *velocity2;
+                                particles[tri.indexTriC].Position = particles[tri.indexTriA].Position - 0.02f *velocity3;
+                                */
+                                
+                                particles[idx].Position = particles[idx].Position - 0.02f * (tangencialVelocity0 - 0.1f*normalVelocity0.magnitude*(tangencialVelocity0/tangencialVelocity0.magnitude) - 0.7f*normalVelocity0);
+                                particles[tri.indexTriA].Position = particles[tri.indexTriA].Position - 0.02f *(tangencialVelocity1 - 0.1f*normalVelocity1.magnitude*(tangencialVelocity1/tangencialVelocity1.magnitude) - 0.7f*normalVelocity1); 
+                                particles[tri.indexTriB].Position = particles[tri.indexTriB].Position - 0.02f *(tangencialVelocity2 - 0.1f*normalVelocity2.magnitude*(tangencialVelocity2/tangencialVelocity2.magnitude) - 0.7f*normalVelocity2);
+                                particles[tri.indexTriC].Position = particles[tri.indexTriC].Position - 0.02f *(tangencialVelocity3 - 0.1f*normalVelocity3.magnitude*(tangencialVelocity3/tangencialVelocity3.magnitude) - 0.7f*normalVelocity3);
                                 
 
-                                particles[idx].Velocity = -normalVelocity0; //tangencialVelocity0 - 0.5f * normalVelocity0.magnitude * (tangencialVelocity0/tangencialVelocity0.magnitude) - normalVelocity0;//corr;
-                                particles[tri.indexTriA].Velocity = -normalVelocity1;//1.0f * (tangencialVelocity1 - 0.5f * normalVelocity1.magnitude * (tangencialVelocity1/tangencialVelocity1.magnitude) - normalVelocity1);
-                                particles[tri.indexTriB].Velocity = -normalVelocity2;//1.0f * (tangencialVelocity2 - 0.5f * normalVelocity2.magnitude * (tangencialVelocity2/tangencialVelocity2.magnitude) - normalVelocity2);
-                                particles[tri.indexTriC].Velocity = -normalVelocity3;//1.0f * (tangencialVelocity3 - 0.5f * normalVelocity3.magnitude * (tangencialVelocity3/tangencialVelocity3.magnitude) - normalVelocity3);                                
+                                /*particles[idx].Position = particles[idx].Prev - normalVelocity0 * 0.02f;
+                                particles[tri.indexTriA].Position = particles[tri.indexTriA].Prev + normalVelocity1 * 0.02f; 
+                                particles[tri.indexTriB].Position = particles[tri.indexTriA].Prev + normalVelocity2 * 0.02f;
+                                particles[tri.indexTriC].Position = particles[tri.indexTriA].Prev + normalVelocity3 * 0.02f;*/
+
+
+                                //particles[idx].AddForce((3f/(w*4.0f)) * ((-normalVelocity0 - particles[idx].Velocity)/0.02f)); //* ( (tangencialVelocity0 - 0.6f * normalVelocity0.magnitude * (tangencialVelocity0/tangencialVelocity0.magnitude) - normalVelocity0) - particles[idx].Velocity));
+                                //particles[tri.indexTriA].AddForce((3f/(w*4.0f)) * ((normalVelocity1 - particles[tri.indexTriA].Velocity)/0.02f));
+                                //particles[tri.indexTriB].AddForce((3f/(w*4.0f)) * ((normalVelocity2 - particles[tri.indexTriB].Velocity)/0.02f));
+                                //particles[tri.indexTriC].AddForce((3f/(w*4.0f)) * ((normalVelocity3 - particles[tri.indexTriC].Velocity)/0.02f));
+                                //particles[idx].ResetResultantForce();
+                                //particles[tri.indexTriA].ResetResultantForce();
+                                //particles[tri.indexTriB].ResetResultantForce();
+                                //particles[tri.indexTriC].ResetResultantForce();
+                                //particles[idx].AddForce((-1f/(w*4.0f)) * (velocity0 - particles[idx].Velocity)/0.02f);
+                                //particles[tri.indexTriA].AddForce((-1f/(w*4.0f)) * (velocity1 - particles[tri.indexTriA].Velocity)/0.02f);
+                                //particles[tri.indexTriB].AddForce((-1f/(w*4.0f)) * (velocity2 - particles[tri.indexTriB].Velocity)/0.02f);
+                                //particles[tri.indexTriC].AddForce((-1f/(w*4.0f)) * (velocity3 - particles[tri.indexTriC].Velocity)/0.02f);
+                                
+
+                                //particles[idx].Velocity = -normalVelocity0; //tangencialVelocity0 - 0.5f * normalVelocity0.magnitude * (tangencialVelocity0/tangencialVelocity0.magnitude) - normalVelocity0;//corr;
+                                //particles[tri.indexTriA].Velocity = -normalVelocity1;//1.0f * (tangencialVelocity1 - 0.5f * normalVelocity1.magnitude * (tangencialVelocity1/tangencialVelocity1.magnitude) - normalVelocity1);
+                                //particles[tri.indexTriB].Velocity = -normalVelocity2;//1.0f * (tangencialVelocity2 - 0.5f * normalVelocity2.magnitude * (tangencialVelocity2/tangencialVelocity2.magnitude) - normalVelocity2);
+                                //particles[tri.indexTriC].Velocity = -normalVelocity3;//1.0f * (tangencialVelocity3 - 0.5f * normalVelocity3.magnitude * (tangencialVelocity3/tangencialVelocity3.magnitude) - normalVelocity3);                                
 
                                 //Force
                                 Vector3 normalForce0 = Vector3.Dot(normalTri, particles[idx].Force) * normalTri;
@@ -245,6 +294,7 @@ public class Simulate
                                 //particles[tri.indexTriB].AddForce(1.0f * (tangencialForce2 - 0.5f * normalForce2.magnitude * (tangencialForce2/tangencialForce2.magnitude)));
                                 //particles[tri.indexTriC].AddForce(1.0f * (tangencialForce3 - 0.5f * normalForce3.magnitude * (tangencialForce3/tangencialForce3.magnitude)));
                                 
+
                             }   
                         }
                     }
@@ -346,7 +396,7 @@ public class Simulate
 
         Vector3 n = p - q; //Distance between point baricentric and node
         float l = n.magnitude; //Distance in magnitude
-        Vector3.Normalize(n); //Direction where the point is from the surface of the triangle
+        //Vector3.Normalize(n); //Direction where the point is from the surface of the triangle
         float C = l - restDist;
         Vector3 grad = n;
         Vector3 grad0 = -n * b0;
@@ -363,14 +413,29 @@ public class Simulate
 
         if (s == 0.0f) return false;
 
-        corr = -s * w * grad;
+        //normalTri = n * l;
+
+        /*corr = -s * w * grad;
         corr0 = -s * w0 * grad0;
         corr1 = -s * w1 * grad1;
-        corr2 = -s * w2 * grad2;
-        /*corr = -n;
-        corr0 = n * b0;
-        corr1 = n * b1;
-        corr2 = n * b2;*/
+        corr2 = -s * w2 * grad2;*/
+
+        corr = grad;
+        corr0 = grad0;
+        corr1 = grad1;
+        corr2 = grad2;
+        
+
+        
+        /*float overlap = restDist - Vector3.Dot(p - b0*p0 - b1*p1 - b2*p2, n);
+        float repulsionImpulse = 1f/(w*2f);//compressionStiffness * overlap * 0.02f;
+        //float repul = - Math.Min(repulsionImpulse, 1f/w * (0.1f*overlap/0.02f));
+        //Vector3 imp = repul * n;
+        float impMed = 2f*repulsionImpulse /(1f + b0*b0 + b1*b1 + b2*b2);
+        corr = -impMed * w * n;
+        corr0 = impMed * w0 * n * b0;
+        corr1 = impMed * w1 * n * b1;
+        corr2 = impMed * w2 * n * b2;*/
 
         val0 = b0;
         val1 = b1;

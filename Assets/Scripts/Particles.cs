@@ -93,7 +93,14 @@ public class Particles
         var lastPosition = position; 
         position = position * 2 - prev + deltaTimeMass * force;
         prev = lastPosition;
-        velocity = (position - prev) / dt;        
+        velocity = (position - prev) / dt;
+        /*Vector3 new_pos = position + velocity * dt + force/mass * 0.5f *dt*dt;
+        Vector3 new_force = force;
+        Vector3 new_vel = velocity + (force/mass + new_force/mass) * (dt*0.5f);
+        position = new_pos;
+        velocity = new_vel;
+        force = new_force;*/
+
     }
 
     /*public void Step()
