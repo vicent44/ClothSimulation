@@ -139,7 +139,7 @@ public class Simulate
 
         for(int v = 0; v < particles.Count; v++)
         {
-            int has = Mathf.Abs(hash.Hash(particles[v].Position));
+            int has = Mathf.Abs(hash.Hash(particles[v].Prev));
 
             if(spHash[has].indices == null) spHash[has].indices = new List<int>();
             spHash[has].indices.Add(particles[v].I);
@@ -148,9 +148,9 @@ public class Simulate
         for(int t = 0; t < triangles.Count; t++)
         {
             var tri = triangles[t];
-            var p0 = particles[tri.indexTriA].Position;
-            var p1 = particles[tri.indexTriB].Position;
-            var p2 = particles[tri.indexTriC].Position;
+            var p0 = particles[tri.indexTriA].Prev;
+            var p1 = particles[tri.indexTriB].Prev;
+            var p2 = particles[tri.indexTriC].Prev;
 
             float w0 = 1f/particles[tri.indexTriA].Mass;
             float w1 = 1f/particles[tri.indexTriB].Mass;
@@ -167,7 +167,7 @@ public class Simulate
                         int idx = spHash[h].indices[sph];
                         if(idx != particles[tri.indexTriA].I && idx != particles[tri.indexTriB].I && idx != particles[tri.indexTriC].I)
                         {
-                            Vector3 p = particles[idx].Position;
+                            Vector3 p = particles[idx].Prev;
                             float w = 1f/particles[idx].Mass;
 
                             Vector3 corr, corr0, corr1, corr2, normalTri;
@@ -202,16 +202,6 @@ public class Simulate
                                 //particles[tri.indexTriB].Position += corr1;
                                 //particles[tri.indexTriC].Position += corr2;
 
-                                float doti = Vector3.Dot(normalTri, corr);
-                                float doti0 = Vector3.Dot(normalTri, corr0);
-                                float doti1 = Vector3.Dot(normalTri, corr1);
-                                float doti2 = Vector3.Dot(normalTri, corr2);
-                                particles[idx].Position -= doti*normalTri;
-                                particles[tri.indexTriA].Position -= doti0*normalTri;
-                                particles[tri.indexTriB].Position -= doti1*normalTri;
-                                particles[tri.indexTriC].Position -= doti2*normalTri;
-                               
-
                                 /*Vector3 vel = particles[idx].Velocity + corr;
                                 Vector3 vel0 = particles[tri.indexTriA].Velocity + corr0;
                                 Vector3 vel1 = particles[tri.indexTriB].Velocity + corr1;
@@ -240,17 +230,11 @@ public class Simulate
                                 Vector3 velocity3 = - normalVelocity3;
 
                                 //Position
-                                /*particles[idx].Position = particles[idx].Position + 0.02f *velocity0;
-                                particles[tri.indexTriA].Position = particles[tri.indexTriA].Position - 0.02f *velocity1; 
-                                particles[tri.indexTriB].Position = particles[tri.indexTriA].Position - 0.02f *velocity2;
-                                particles[tri.indexTriC].Position = particles[tri.indexTriA].Position - 0.02f *velocity3;
-                                */
-                                
-                                particles[idx].Position = particles[idx].Position - 0.02f * (tangencialVelocity0 - 0.1f*normalVelocity0.magnitude*(tangencialVelocity0/tangencialVelocity0.magnitude) - 0.7f*normalVelocity0);
-                                particles[tri.indexTriA].Position = particles[tri.indexTriA].Position - 0.02f *(tangencialVelocity1 - 0.1f*normalVelocity1.magnitude*(tangencialVelocity1/tangencialVelocity1.magnitude) - 0.7f*normalVelocity1); 
-                                particles[tri.indexTriB].Position = particles[tri.indexTriB].Position - 0.02f *(tangencialVelocity2 - 0.1f*normalVelocity2.magnitude*(tangencialVelocity2/tangencialVelocity2.magnitude) - 0.7f*normalVelocity2);
-                                particles[tri.indexTriC].Position = particles[tri.indexTriC].Position - 0.02f *(tangencialVelocity3 - 0.1f*normalVelocity3.magnitude*(tangencialVelocity3/tangencialVelocity3.magnitude) - 0.7f*normalVelocity3);
-                                
+                                particles[idx].Position = particles[idx].Prev - 0.02f * velocity0;//(tangencialVelocity0 - 0.6f*normalVelocity0.magnitude*(tangencialVelocity0/tangencialVelocity0.magnitude) - 0.9f*normalVelocity0);
+                                particles[tri.indexTriA].Position = particles[tri.indexTriA].Prev + 0.02f * velocity1 * val0;//(tangencialVelocity1 - 0.6f*normalVelocity1.magnitude*(tangencialVelocity1/tangencialVelocity1.magnitude) - 0.9f*normalVelocity1); 
+                                particles[tri.indexTriB].Position = particles[tri.indexTriB].Prev + 0.02f * velocity2 * val1;//(tangencialVelocity2 - 0.6f*normalVelocity2.magnitude*(tangencialVelocity2/tangencialVelocity2.magnitude) - 0.9f*normalVelocity2);
+                                particles[tri.indexTriC].Position = particles[tri.indexTriC].Prev + 0.02f * velocity3 * val2;//(tangencialVelocity3 - 0.6f*normalVelocity3.magnitude*(tangencialVelocity3/tangencialVelocity3.magnitude) - 0.9f*normalVelocity3);
+
 
                                 /*particles[idx].Position = particles[idx].Prev - normalVelocity0 * 0.02f;
                                 particles[tri.indexTriA].Position = particles[tri.indexTriA].Prev + normalVelocity1 * 0.02f; 
@@ -396,7 +380,7 @@ public class Simulate
 
         Vector3 n = p - q; //Distance between point baricentric and node
         float l = n.magnitude; //Distance in magnitude
-        //Vector3.Normalize(n); //Direction where the point is from the surface of the triangle
+        Vector3.Normalize(n); //Direction where the point is from the surface of the triangle
         float C = l - restDist;
         Vector3 grad = n;
         Vector3 grad0 = -n * b0;
@@ -415,15 +399,10 @@ public class Simulate
 
         //normalTri = n * l;
 
-        /*corr = -s * w * grad;
+        corr = -s * w * grad;
         corr0 = -s * w0 * grad0;
         corr1 = -s * w1 * grad1;
-        corr2 = -s * w2 * grad2;*/
-
-        corr = grad;
-        corr0 = grad0;
-        corr1 = grad1;
-        corr2 = grad2;
+        corr2 = -s * w2 * grad2;
         
 
         
