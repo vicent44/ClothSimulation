@@ -15,7 +15,7 @@ public class Simulate
     {
         public List<int> indices;
     }
-    TriangleIntersection intersec;
+    //TriangleIntersection intersec;
     Hashing hash;
     public int gridSize;
 

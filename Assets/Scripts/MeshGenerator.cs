@@ -40,7 +40,7 @@ public class MeshGenerator : MonoBehaviour
     [SerializeField] float dampingConstant = 0.25f;
 
     Simulate simulator;
-    TriangleIntersection intersec;
+    //TriangleIntersection intersec;
     Hashing hash;
 
     float timePassed = 0.0f;
