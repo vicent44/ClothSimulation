@@ -36,45 +36,21 @@ public class Particles
     protected int i;
     protected int j;
 
-    //protected Vector3 prevVel;
-
-    //public Vector3 externalForces;
-    //public Vector3 internalForces;
-
-    //public Vector3 totalForces;
-
-    //List<Springs> connection;
-
-    public Particles(Vector3 p, float m, int ii, int jj)//, float a)
+    public Particles(Vector3 p, float m, int ii, int jj)
     {
         mass = m;
-        //area = a;
 
         position = prev = p;
         velocity = Vector3.zero;
         active = true;
-        //obj = obje;
-
 
         i = ii;
         j = jj;
-
-        /*var obj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-        obj.transform.localScale = Vector3.one * 0.1f;
-        obj.transform.position = position;*/
-
-        //externalForces = Vector3.zero;
-        //internalForces = Vector3.zero;
-        //totalForces = Vector3.zero;
-
-        //connection = new List<Springs>();
-        //Debug.Log(p);
     }
 
     public void AddForce(Vector3 forceAdded)
     {
         force += forceAdded;
-        //Debug.Log(force);
     }
 
     public void ResetResultantForce()
@@ -102,24 +78,4 @@ public class Particles
         force = new_force;*/
 
     }
-
-    /*public void Step()
-    {
-        //Position Steep
-        var x = position - prev;
-        var nextx = position + x;
-
-        prev = position;
-        position = nextx;
-
-        //Velocity Steep
-        var v = velocity - prevVel;
-        var nextv = velocity + v;
-
-        prevVel = velocity;
-        velocity = nextv;
-
-        //internalForces = -1f * (velocity - prevVel) - 1f * (position - prev) + 1f * 0.5f;
-    }*/
-
 }

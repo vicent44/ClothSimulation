@@ -6,72 +6,50 @@ using UnityEngine;
 [RequireComponent(typeof(MeshFilter))]
 public class MeshGenerator : MonoBehaviour
 {
-    Mesh mesh;
-
+    //Create the mesh in unity
+    Mesh mesh; 
     Vector3[] vertices;
-    Vector3[] verticesNext;
     int[] triangles;
+    //Parameter to set the size of the grid
     public int gridSizeNew;
-    //public bool gravity = true;
-    [SerializeField] int iterations = 1;
-
-    //[SerializeField] float areaTotalCloth = 12f;
-
-    //[SerializeField] float massTotalCloth = 12f;
+    //Variable to choose if we want to draw the lines between particles
+    [SerializeField] bool drawSprings = true;
+    //Setting the cloth density
     [SerializeField] float clothDensity = 1f;
-
-
-    //[SerializeField] bool useGravity = true;
-    //[SerializeField] float gravity = 1f;
-
-    //[SerializeField] bool useWind = false;
-    //[SerializeField] Vector3 Vector3Field (Rect position, string windDirection, Vector3(0, 0, 1));
-    /*[SerializeField] int windxDirection = 1;
-    [SerializeField] int windyDirection = 0;
-    [SerializeField] int windzDirection = 0;*/
+    //Wind direction, in normal vector
     [SerializeField] Vector3 windDirection=new Vector3(0,0,1);
-
+    //Wind module
     [SerializeField] float windModule = 1f;
 
-    //[SerializeField] float elasticConstant = 1f;
+    //Setting all the constants for the springs
     [SerializeField] float elasticConstantStructural = 20f;
     [SerializeField] float elasticConstantShear = 20f;
     [SerializeField] float elasticConstantBend = 20f;
     [SerializeField] float dampingConstant = 0.25f;
+    //Setting all the constants of friction and dissipation for cloth and plane
+    [SerializeField] float frictionConstPlane = 0.7f;
+    [SerializeField] float dissipationConstPlane = 0.1f;
+    [SerializeField] float frictionConstCloth = 0.7f;
+    [SerializeField] float dissipationConstCloth = 0.1f;
 
     Simulate simulator;
-    //TriangleIntersection intersec;
     Hashing hash;
 
     float timePassed = 0.0f;
     public float deltaTimeStep = 0.02f;
 
-    //Triangles triangle;
+    //List with all the objects: particles, springs, triangles.
     List<Particles> _particles;
     List<Springs> _springs;
     List<Triangles> _triangles;
-    //For hash table
-/*
-    public struct SPHash
-    {
-        public List<int> indices;
-    } */
 
     Vector3 winddirectiondensity;
-
-    //[SerializeField] Transform control;
-    //[SerializeField] Transform _esferePrefab;
-    //[SerializeField] GameObject esferePrefab;
-
-    [SerializeField] GameObject esfereControl;
-    List<GameObject> _esfere;
-    //List<Transform> _esfere;
-
+    //List of gameobjects to be able to select some vertex in the mesh (gameobjects)
+    [SerializeField] GameObject sphereControl;
+    List<GameObject> _sphere;
+    [SerializeField] float sphereScale = 0.1f;
+    //Set the transform plane to know where to do the plane collision
     [SerializeField] Transform plane;
-
-    //Structural = 1
-    //Shear = 2
-    //Bend = 3
 
     //Mouse Drag Variables
     Vector3 screenPoint;
@@ -83,82 +61,50 @@ public class MeshGenerator : MonoBehaviour
 
     void Start()
     {
-        /*mesh = new Mesh();
-        GetComponent<MeshFilter>().mesh = mesh;
-        CreateShape();
-        UpdateMesh();*/
+        //Setting the size of the mesh, specially the density
         //int gridSize = gridSizeNew + (gridSizeNew - 1);
-        
         int gridSize = gridSizeNew + gridSizeNew * (gridSizeNew - 1);
-        //int gridSize = 4;
+        
+        //Initialice the list of particles, springs and triangles.
         _particles = new List<Particles>();
         _springs = new List<Springs>();
         _triangles = new List<Triangles>();
-        //_esfere = new List<Transform>();
-        _esfere = new List<GameObject>();
-        //windforce = new Vector3();
+        _sphere = new List<GameObject>();
 
+        sphereControl.transform.localScale = new Vector3(sphereScale, sphereScale, sphereScale);
 
         var particleParent = new GameObject("particleParent");
 
-        //var particle = new GameObject();
-
         float area = 0.2f * (gridSize - 1) * 0.2f * (gridSize - 1);
 
-        //float mass = massTotalCloth / (gridSize * gridSize);
-        //float area = areaToalCloth / (gridSize * gridSize);
-        //float mass = 0.1f;
         float massTotal = clothDensity * area;
         float mass = massTotal / (gridSize * gridSize);
 
-        //int pos = 0;
         float jP = 0;
         float iP = 0;
         int pi = 0;
         int pj = 0;
-        //float y = 0;
-        //int indexat = 0;
         for(int i = 0; i < gridSize; i++)
         {
             for(int j = 0; j < gridSize; j++)
             {
-                //pos = j * gridSize + i;
                 jP = j * 0.2f;
                 iP = i * 0.2f;
                 
-                //var p = new Particles(new Vector3(jP,0.0f,iP), mass, pi, pj);
-                var newP = ParticlesBehaviour.Create(new Vector3(jP,0.0f,iP), mass, pi, pj, esfereControl);
+                var newP = ParticlesBehaviour.Create(new Vector3(jP,0.0f,iP), mass, pi, pj, sphereControl);
                 newP.transform.SetParent(particleParent.transform, false);
                 newP.transform.localPosition = new Vector3(jP,0.0f,iP);
                 newP.particles.Position = newP.transform.position;
-
-                //newP.transform.SetParent(particleParent, false);
-                //newP.transform.localPosition = new Vector3(jP,0.0f,iP);
-                //_esfere[pi].AddComponent<p>();
-                //p.particleObject = Instantiate(_esferePrefab, p.Position, Quaternion.identity);//AddComponent<SphereCollider>();//<SphereCollider>();
-                //_esfere.Add(newP);
                 _particles.Add(newP.particles);
-                //var obj = GameObject.Instantiate(_esferePrefab, new Vector3(jP,0.0f,iP), Quaternion.identity);
-                //var obj = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                //obj.transform.localScale = Vector3.one * 0.1f;
-                //obj.transform.position = p.Position;
-                //obj.AddComponent<Particles>();
-                //obj.gameObject.tag = "("+ jP.ToString() +" ,"+ y.ToString() +" ,"+ iP.ToString() +")";
-                //_esfere.Add(obj);
                 pi++;
             }
             pj++;
         }
-        float distBetwenParticles = (_particles[0].Position - _particles[1].Position).magnitude;
-        //float area = (distBetwenParticles * distBetwenParticles * (gridSize - 1) * (gridSize - 1)) / (gridSize * gridSize);
-        //var w = new WindForce(new Vector3(windxDirection, windyDirection, windzDirection) , windModule, area, clothDensity);
-        //windforce = w.WindTotalForce;
-        //windforce = new Vector3((float)windxDirection, (float)windyDirection, (float)windzDirection) * windModule * area * clothDensity;
-        //windforce.x = (float)windxDirection * windModule * area * clothDensity;
-        winddirectiondensity = windDirection * windModule * clothDensity;
-        //Debug.Log(windforce.z);
-        //Springs
 
+        float distBetwenParticles = (_particles[0].Position - _particles[1].Position).magnitude;
+        winddirectiondensity = windDirection * windModule * clothDensity;
+        
+        //Springs
         //Structural Horizontal - Right
         for(int j = 0; j < gridSize; j++)
         {
@@ -167,9 +113,7 @@ public class MeshGenerator : MonoBehaviour
                 var index = j * gridSize + i;
                 var c = _particles[index];
                 var right = _particles[index + 1];
-                //Debug.Log(index);
                 var re = new Springs(c, right, elasticConstantStructural, dampingConstant, 1);
-                //c.Connect(re);
                 _springs.Add(re);
             }
         }
@@ -183,9 +127,7 @@ public class MeshGenerator : MonoBehaviour
                 var index_2 = (j + 1) * gridSize + i;
                 var c = _particles[index_1];
                 var right = _particles[index_2];
-
                 var re = new Springs(c, right, elasticConstantStructural, dampingConstant, 1);
-                //c.Connect(re);
                 _springs.Add(re);
             }
         }
@@ -199,9 +141,7 @@ public class MeshGenerator : MonoBehaviour
                 var index_2 = (j + 1) * gridSize + i + 1;
                 var c = _particles[index_1];
                 var bot = _particles[index_2];
-
                 var re = new Springs(c, bot, elasticConstantShear, dampingConstant, 2);
-                //c.Connect(re);
                 _springs.Add(re);
             }
         }
@@ -215,9 +155,7 @@ public class MeshGenerator : MonoBehaviour
                 var index_2 = (j + 1) * gridSize + i - 1;
                 var c = _particles[index_1];
                 var top = _particles[index_2];
-                //Debug.Log(index_1);
                 var re = new Springs(c, top, elasticConstantShear, dampingConstant, 2);
-                //c.Connect(re);
                 _springs.Add(re);
             }
         }
@@ -231,9 +169,7 @@ public class MeshGenerator : MonoBehaviour
                 var index_2 = j * gridSize + i + 2;
                 var c = _particles[index_1];
                 var left = _particles[index_2];
-
                 var re = new Springs(c, left, elasticConstantBend, dampingConstant, 3);
-                //c.Connect(re);
                 _springs.Add(re);
             }
         }
@@ -247,31 +183,20 @@ public class MeshGenerator : MonoBehaviour
                 var index_2 = (j + 2) * gridSize + i;
                 var c = _particles[index_1];
                 var left = _particles[index_2];
-
                 var re = new Springs(c, left, elasticConstantBend, dampingConstant, 3);
-                //c.Connect(re);
                 _springs.Add(re);
             }
         }
         
-        //Fix first row
-        /*for(int i = 0; i < 16; i++)
-        {
-            _particles[i].isActive = false;
-        }*/
         _particles[0].isActive = false;
-        _particles[8].isActive = false;
-        //_particles[3].isActive = false;
+        _particles[gridSize - 1].isActive = false;
 
-        simulator = new Simulate(_particles, _springs, _triangles, winddirectiondensity, plane, gridSize);
-        //intersec = new TriangleIntersection();
+        simulator = new Simulate(_particles, _springs, _triangles, winddirectiondensity, plane, gridSize, frictionConstPlane, dissipationConstPlane, frictionConstCloth, dissipationConstCloth, drawSprings);
 
         mesh = new Mesh();
         GetComponent<MeshFilter>().mesh = mesh;
         CreateShape();
         UpdateMesh();
-
-
     }
 
     void FixedUpdate()
@@ -417,7 +342,6 @@ public class MeshGenerator : MonoBehaviour
         _particles[Mathf.FloorToInt(gridSize * 0.5f)].position = control.position = world;
         _particles[0].position=(Vector3.zero);*/
     }
-
     /*void OnGUI()
     {
         //if(Input.GetMouseButtonDown(0))
@@ -434,7 +358,6 @@ public class MeshGenerator : MonoBehaviour
         }
 
     }*/
-
     void FindMaxAge(List<Springs> _springs)
     {
         float maxAge = 0f;
@@ -460,7 +383,6 @@ public class MeshGenerator : MonoBehaviour
             //int gridSize = gridSizeNew + (gridSizeNew - 1);
             simulator.Update(deltaTimeStep, _triangles);
             UpdateMesh();
-            //Debug.Log(deltaTimeStep);
         }
         if (Input.GetKeyDown(KeyCode.Space))
             isPaused = !isPaused;
@@ -473,24 +395,15 @@ public class MeshGenerator : MonoBehaviour
             {
                 this.hit.collider.GetComponent<ParticlesBehaviour>().particles.isActive = false;
             }
-
             this.screenPoint = Camera.main.WorldToScreenPoint(this.transform.position);
         }
 
         if(Input.GetKey("left"))
         {
-            //Debug.Log("hola");
-            //_particles[0].isActive = true;
             this.hit.collider.GetComponent<ParticlesBehaviour>().particles.AddPosition(new Vector3(0.05f, 0f, 0f));
-            //_particles[0].ResetResultantForce();
-            //_particles[0].Velocity = Vector3.zero;
-            //_particles[0].isActive = false;
-            
-            //_particles[0].ResetResultantForce();
         }
         if(Input.GetKey("right"))
         {
-            //_particles[0].isActive = true;
             this.hit.collider.GetComponent<ParticlesBehaviour>().particles.AddPosition(new Vector3(-0.05f, 0f, 0f));
         }
         if(Input.GetKey("up"))
@@ -630,8 +543,7 @@ public class MeshGenerator : MonoBehaviour
                 _triangles[posi].PosTriangles(_particles[i2].Position, _particles[i3].Position, _particles[i1].Position);
                 posi++;
             }
-        }
-        //Debug.Log(_triangles[30].normTri);     
+        } 
 
         for(int i = 0; i < gridSize; i++)
         {
@@ -645,7 +557,10 @@ public class MeshGenerator : MonoBehaviour
         mesh.vertices = vertices;
         mesh.triangles = triangles;
 
+        //mesh.SetSubMesh(1, 1);
+
         mesh.RecalculateNormals();
+        //Debug.Log("Submeshes: " + mesh.subMeshCount);
 
     }
 

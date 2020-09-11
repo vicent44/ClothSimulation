@@ -20,49 +20,16 @@ public class ParticlesBehaviour : MonoBehaviour
         transform.position = _particle.Position;
     }
 
-    // Update is called once per frame
+    //Update is called once per frame
     void Update()
     {
-        transform.position = _particle.Position;
-        //var triangle = GetComponent<MeshGenerator>();
-
-        /*if (!_moveWithMouse)
-        {
-            previousMousePosition = Vector3.zero;
-            return;
-        }
-
-        if (!Input.GetMouseButton(0))
-        {
-            _particle.isActive = _wasKinematic;
-            previousMousePosition = Vector3.zero;
-
-            _moveWithMouse = false;
-        }
-
-        var mousePosition = Input.mousePosition;
-        mousePosition.z = Camera.main.transform.position.z;
-
-        mousePosition = Camera.main.ScreenToWorldPoint(mousePosition);
-
-        if (previousMousePosition == Vector3.zero)
-            previousMousePosition = mousePosition;
-
-        _particle.Position = (Vector3)_particle.Position + (mousePosition - previousMousePosition);
-        previousMousePosition = mousePosition;
-
-        if (Input.GetKeyDown(KeyCode.P))
-            _wasKinematic = !_wasKinematic;*/
-        
+        transform.position = _particle.Position;        
     }
 
     public static ParticlesBehaviour Create(Vector3 po, float mass, int pi, int pj, GameObject baseGameObject = null)
     {
         // If a baseGameObject was passed in instantiate it, otherwise create a default
-        var newGameObject =
-            baseGameObject ?
-            Instantiate(baseGameObject) : new GameObject();
-
+        var newGameObject = baseGameObject ? Instantiate(baseGameObject) : new GameObject();
         newGameObject.name = "New Particle";
 
         var newParticle = new Particles(po, mass, pi, pj);

@@ -33,21 +33,11 @@ public class Triangles
 
     public void PosTriangles(Vector3 posA, Vector3 posB, Vector3 posC)
     {
-
         postriA = posA;
         postriB = posB;
         postriC = posC;
         Vector3 side1 = postriB - postriA;
         Vector3 side2 = postriC - postriA;
         normtri = Vector3.Cross(side1, side2).normalized;
-        //NormCalculation(postriA, postriB, postriC);
     }
-
-    /*void NormCalculation(Vector3 postriA, Vector3 postriB, Vector3 postriC)
-    {
-        //Vector3 normtri = Vector3.Cross(postriB - postriA, postriC - postriA) / Vector3.Cross(postriB - postriA, postriC - postriA).magnitude;
-        Vector3 side1 = postriB - postriA;
-        Vector3 side2 = postriC - postriA;
-        Vector3 normtri = Vector3.Cross(side1, side2).normalized;
-    }*/
 }

@@ -339,17 +339,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gridSizeNew: 3
-  iterations: 1
+  drawSprings: 1
   clothDensity: 150
   windDirection: {x: 0, y: 0, z: 0}
   windModule: 10
-  elasticConstantStructural: 500
-  elasticConstantShear: 500
-  elasticConstantBend: 500
-  dampingConstant: 0.2
+  elasticConstantStructural: 50
+  elasticConstantShear: 1.24
+  elasticConstantBend: 2
+  dampingConstant: 0.99
+  frictionConstPlane: 0.7
+  dissipationConstPlane: 0.1
+  frictionConstCloth: 0.6
+  dissipationConstCloth: 0.9
   deltaTimeStep: 0.02
-  esfereControl: {fileID: 6907724091159522119, guid: 272305273b44d2bf5a073c6852983f2e,
+  sphereControl: {fileID: 6907724091159522119, guid: 272305273b44d2bf5a073c6852983f2e,
     type: 3}
+  sphereScale: 0.1
   plane: {fileID: 536771667}
   isPaused: 1
 --- !u!33 &835045764

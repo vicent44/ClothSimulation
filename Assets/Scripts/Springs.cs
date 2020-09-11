@@ -98,12 +98,10 @@ public class Springs
         if(a.isActive)
         {
             a.AddForce(force);
-            //a.AddPosition(0.5f * (a.Position - b.Position) * ((dist - restLength)/dist));
         }
         if(b.isActive)
         {
             b.AddForce(-force);
-            //b.AddPosition(-0.5f * (a.Position - b.Position) * ((dist - restLength)/dist));
         }
     }
 }

@@ -15,11 +15,15 @@ public class Simulate
     {
         public List<int> indices;
     }
-    //TriangleIntersection intersec;
     Hashing hash;
     public int gridSize;
+    public float frictionConstPlane;
+    public float dissipationConstPlane;
+    public float frictionConstCloth;
+    public float dissipationConstCloth;
+    public bool drawSprings;
 
-    public Simulate(List<Particles> particles, List<Springs> springs, List<Triangles> triangles, Vector3 winddirectiondensity, Transform plane, int gridSize)
+    public Simulate(List<Particles> particles, List<Springs> springs, List<Triangles> triangles, Vector3 winddirectiondensity, Transform plane, int gridSize, float frictionConstPlane, float dissipationConstPlane, float frictionConstCloth, float dissipationConstCloth, bool drawSprings)
     {
         this.particles = particles;
         this.springs = springs;
@@ -27,58 +31,43 @@ public class Simulate
         this.winddirectiondensity = winddirectiondensity;
         this.plane = plane;
         this.gridSize = gridSize;
-        //intersec = new TriangleIntersection();
+        this.frictionConstPlane = frictionConstPlane;
+        this.dissipationConstPlane = dissipationConstPlane;
+        this.frictionConstCloth = frictionConstCloth;
+        this.dissipationConstCloth = dissipationConstCloth;
+        this.drawSprings = drawSprings;
     }
 
     public void Update(float dt, List<Triangles> triangles)
     {
-        this.triangles = triangles;
+        this.triangles = triangles; //Update new triangles for the windForce calculation
         ComputeTotalForces();
         WindForce();
-        //IntegratorEuler(dt);
         IntegratorVerlet(dt);
-        CheckPlaneCollitions(dt);
-        CheckSelfCollitions();
-        //IntegratorVerlet(dt);
+        CheckPlaneCollitions(dt, frictionConstPlane, dissipationConstPlane);
+        CheckSelfCollitions(dt, frictionConstCloth, dissipationConstCloth);
     }
 
     public void ComputeTotalForces()
     {
+        //First add the gravity force
         foreach( var p in particles)
         {
             p.ResetResultantForce();
             if(p.isActive){
-                //Afegir la gravetat i el vent
                 var gravity = new Vector3(0, -9.8f, 0) * p.Mass;
-                //var wind = 
-
                 p.AddForce(gravity);
-                //p.AddForce(windForce);
             }
         }
-        /*for(int i = 0; i < particles.Count; i++)
-        {
-            particles[i].ResetResultantForce();
-            var gravity = new Vector3(0, -0.98f, 0) * particles[i].Mass;
-            if(i > 15 and i < 31)
-            {
-                particles[i].AddForce(-gravity)
-            }
-            else
-            {
-                particles[i].AddForce(gravity);
-            }
-        }*/
-
+        //Second add the hook force and damping force
         foreach (var s in springs)
         {
             s.ApplyForce();
         }
     }
-
+    //Euler integrator
     void IntegratorEuler(float dt)
     {
-        //Euler
         foreach(var p in particles)
         {
             float deltaTimeMass = dt / p.Mass;
@@ -86,32 +75,22 @@ public class Simulate
             p.Position += p.Velocity * dt;
         }
     }
-
+    //Verlet integrator called for each particle the verlet integrator
     void IntegratorVerlet(float dt)
     {
-
         foreach(var p in particles)
         {
             if(p.isActive) p.UpdateParticle(dt);
-            /*float deltaTimeMass = (dt * dt) / p.Mass;
-            var lastPosition = p.Position; 
-            p.Position = p.Position * 2 - p.Prev + deltaTimeMass * p.Force;
-            p.Prev = lastPosition;
-            p.Velocity = (p.Position - p.Prev) / dt;*/
         }
     }
 
-    void CheckPlaneCollitions(float dt)
+    void CheckPlaneCollitions(float dt, float frictionConstPlane, float dissipationConstPlane)
     {
         foreach(var p in particles)
         {
-            /*float dx = p.Position.x - plane.position.x;
-            float dy = p.Position.y - plane.position.y;
-            float dz = p.Position.z - plane.position.z;*/
-            Vector3 d = p.Position - plane.position;
+            Vector3 d = p.Position - (plane.position + new Vector3(0f,0.02f,0f));
             Vector3 normalPlane = new Vector3(0f,1f,0f);
 
-            //float dot = normalPlane.x * dx + normalPlane.y * dy + normalPlane.z * dz;
             float dot = Vector3.Dot(normalPlane, d);
             if(dot <= 0)
             {
@@ -120,19 +99,13 @@ public class Simulate
                 Vector3 tangencialVelocity = p.Velocity - normalVelocity;
                 Vector3 normalForce = Vector3.Dot(p.Force, normalPlane) * normalPlane;
                 Vector3 tangencialForce = p.Force - normalForce;
-                //Firts 0.5 is coeficient of friction
-                //Second term is - kr * normalVelocity but kr = 0 
-                //because is perfect inelastic.
-                p.Position = p.Position - dt * (tangencialVelocity-0.1f*normalVelocity.magnitude*(tangencialVelocity/tangencialVelocity.magnitude)-0.7f*normalVelocity);
-                p.Velocity = Vector3.zero;//tangencialVelocity; // -normalVelocity;//Vector3.zero;//(1 - 0.9f) * tangencialVelocity;
-                //p.AddForce(tangencialForce - 0.5f * normalForce.magnitude * (tangencialForce/tangencialForce.magnitude));
-                //p.AddForce(- p.Mass * tangencialVelocity/dt);
-                //p.ResetResultantForce();
+
+                p.Position = p.Position - dt * (tangencialVelocity-frictionConstPlane*normalVelocity.magnitude*(tangencialVelocity/tangencialVelocity.magnitude)-dissipationConstPlane*normalVelocity);
             }
         }
     }
 
-    void CheckSelfCollitions()
+    void CheckSelfCollitions(float dt, float frictionConstCloth, float dissipationConstCloth)
     {
         hash = new Hashing(gridSize, 1.0f/(float)gridSize, 1723);
         SPHash[] spHash = new SPHash[1723];
@@ -181,22 +154,7 @@ public class Simulate
                                 out corr, out corr0, out corr1, out corr2, out normalTri,
                                 out val0, out val1, out val2))
                             {
-                                
-                                //Vector3 normalVeloci = Vector3.Dot(triangles[t].normTri, particles[idx].Velocity) * particles[idx].Velocity;
-                                //Vector3 tangencialVelocity = particles[idx].Velocity - normalVeloci;
-                                
-                                /*particles[idx].Velocity = Vector3.zero;
-                                particles[idx].ResetResultantForce();
-
-                                particles[tri.indexTriA].Velocity = Vector3.zero;
-                                particles[tri.indexTriA].ResetResultantForce();
-
-                                particles[tri.indexTriB].Velocity = Vector3.zero;
-                                particles[tri.indexTriB].ResetResultantForce();
-
-                                particles[tri.indexTriC].Velocity = Vector3.zero;
-                                particles[tri.indexTriC].ResetResultantForce();*/
-                                Debug.Log(particles[idx].Position);
+                                //Debug.Log(particles[idx].Position);
                                 //particles[idx].Position += corr;
                                 //particles[tri.indexTriA].Position += corr0;
                                 //particles[tri.indexTriB].Position += corr1;
@@ -229,32 +187,22 @@ public class Simulate
                                 Vector3 velocity2 = - normalVelocity2;
                                 Vector3 velocity3 = - normalVelocity3;
 
+                                Vector3 velocityBest0 = tangencialVelocity0 - frictionConstCloth*normalVelocity0.magnitude*(tangencialVelocity0/tangencialVelocity0.magnitude) - dissipationConstCloth*normalVelocity0;
+                                Vector3 velocityBest1 = tangencialVelocity1 - frictionConstCloth*normalVelocity1.magnitude*(tangencialVelocity1/tangencialVelocity1.magnitude) - dissipationConstCloth*normalVelocity1;
+                                Vector3 velocityBest2 = tangencialVelocity2 - frictionConstCloth*normalVelocity2.magnitude*(tangencialVelocity2/tangencialVelocity2.magnitude) - dissipationConstCloth*normalVelocity2;
+                                Vector3 velocityBest3 = tangencialVelocity3 - frictionConstCloth*normalVelocity3.magnitude*(tangencialVelocity3/tangencialVelocity3.magnitude) - dissipationConstCloth*normalVelocity3;
+
                                 //Position
-                                particles[idx].Position = particles[idx].Prev - 0.02f * velocity0;//(tangencialVelocity0 - 0.6f*normalVelocity0.magnitude*(tangencialVelocity0/tangencialVelocity0.magnitude) - 0.9f*normalVelocity0);
-                                particles[tri.indexTriA].Position = particles[tri.indexTriA].Prev + 0.02f * velocity1 * val0;//(tangencialVelocity1 - 0.6f*normalVelocity1.magnitude*(tangencialVelocity1/tangencialVelocity1.magnitude) - 0.9f*normalVelocity1); 
-                                particles[tri.indexTriB].Position = particles[tri.indexTriB].Prev + 0.02f * velocity2 * val1;//(tangencialVelocity2 - 0.6f*normalVelocity2.magnitude*(tangencialVelocity2/tangencialVelocity2.magnitude) - 0.9f*normalVelocity2);
-                                particles[tri.indexTriC].Position = particles[tri.indexTriC].Prev + 0.02f * velocity3 * val2;//(tangencialVelocity3 - 0.6f*normalVelocity3.magnitude*(tangencialVelocity3/tangencialVelocity3.magnitude) - 0.9f*normalVelocity3);
+                                particles[idx].Position = particles[idx].Prev - dt * velocity0;
+                                particles[tri.indexTriA].Position = particles[tri.indexTriA].Prev - dt * velocity1 * val0; 
+                                particles[tri.indexTriB].Position = particles[tri.indexTriB].Prev - dt * velocity2 * val1;
+                                particles[tri.indexTriC].Position = particles[tri.indexTriC].Prev - dt * velocity3 * val2;
 
 
                                 /*particles[idx].Position = particles[idx].Prev - normalVelocity0 * 0.02f;
                                 particles[tri.indexTriA].Position = particles[tri.indexTriA].Prev + normalVelocity1 * 0.02f; 
                                 particles[tri.indexTriB].Position = particles[tri.indexTriA].Prev + normalVelocity2 * 0.02f;
                                 particles[tri.indexTriC].Position = particles[tri.indexTriA].Prev + normalVelocity3 * 0.02f;*/
-
-
-                                //particles[idx].AddForce((3f/(w*4.0f)) * ((-normalVelocity0 - particles[idx].Velocity)/0.02f)); //* ( (tangencialVelocity0 - 0.6f * normalVelocity0.magnitude * (tangencialVelocity0/tangencialVelocity0.magnitude) - normalVelocity0) - particles[idx].Velocity));
-                                //particles[tri.indexTriA].AddForce((3f/(w*4.0f)) * ((normalVelocity1 - particles[tri.indexTriA].Velocity)/0.02f));
-                                //particles[tri.indexTriB].AddForce((3f/(w*4.0f)) * ((normalVelocity2 - particles[tri.indexTriB].Velocity)/0.02f));
-                                //particles[tri.indexTriC].AddForce((3f/(w*4.0f)) * ((normalVelocity3 - particles[tri.indexTriC].Velocity)/0.02f));
-                                //particles[idx].ResetResultantForce();
-                                //particles[tri.indexTriA].ResetResultantForce();
-                                //particles[tri.indexTriB].ResetResultantForce();
-                                //particles[tri.indexTriC].ResetResultantForce();
-                                //particles[idx].AddForce((-1f/(w*4.0f)) * (velocity0 - particles[idx].Velocity)/0.02f);
-                                //particles[tri.indexTriA].AddForce((-1f/(w*4.0f)) * (velocity1 - particles[tri.indexTriA].Velocity)/0.02f);
-                                //particles[tri.indexTriB].AddForce((-1f/(w*4.0f)) * (velocity2 - particles[tri.indexTriB].Velocity)/0.02f);
-                                //particles[tri.indexTriC].AddForce((-1f/(w*4.0f)) * (velocity3 - particles[tri.indexTriC].Velocity)/0.02f);
-                                
 
                                 //particles[idx].Velocity = -normalVelocity0; //tangencialVelocity0 - 0.5f * normalVelocity0.magnitude * (tangencialVelocity0/tangencialVelocity0.magnitude) - normalVelocity0;//corr;
                                 //particles[tri.indexTriA].Velocity = -normalVelocity1;//1.0f * (tangencialVelocity1 - 0.5f * normalVelocity1.magnitude * (tangencialVelocity1/tangencialVelocity1.magnitude) - normalVelocity1);
@@ -271,14 +219,6 @@ public class Simulate
                                 Vector3 tangencialForce1 = particles[tri.indexTriA].Force - normalForce1;
                                 Vector3 tangencialForce2 = particles[tri.indexTriB].Force - normalForce2;
                                 Vector3 tangencialForce3 = particles[tri.indexTriC].Force - normalForce3;
-
-                            
-                                //particles[idx].AddForce(tangencialForce0 - 0.5f * normalForce0.magnitude * (tangencialForce0/tangencialForce0.magnitude));
-                                //particles[tri.indexTriA].AddForce(1.0f * (tangencialForce1 - 0.5f * normalForce1.magnitude * (tangencialForce1/tangencialForce1.magnitude)));
-                                //particles[tri.indexTriB].AddForce(1.0f * (tangencialForce2 - 0.5f * normalForce2.magnitude * (tangencialForce2/tangencialForce2.magnitude)));
-                                //particles[tri.indexTriC].AddForce(1.0f * (tangencialForce3 - 0.5f * normalForce3.magnitude * (tangencialForce3/tangencialForce3.magnitude)));
-                                
-
                             }   
                         }
                     }
@@ -423,197 +363,31 @@ public class Simulate
         return true;
     }
 
+    //Adding the wind force taking in account every triangle area
     void WindForce()
     {
         foreach(var t in triangles)
         {
-            //Vector3 normal = t.normTri;
-            //Vector3 forcewind = normal * Vector3.Dot(normal, windDirection);
-            Vector3 inter = Vector3.Cross(t.posTriA - t.posTriC, t.posTriB - t.posTriC);
-            float areatriangle = 0.5f * (float)Math.Sqrt(Vector3.Dot(inter, inter));
-            Vector3 forceTriangle = areatriangle * winddirectiondensity;
+            Vector3 inter = Vector3.Cross(t.posTriA - t.posTriC, t.posTriB - t.posTriC); //Calculate the area of square
+            float areatriangle = 0.5f * (float)Math.Sqrt(Vector3.Dot(inter, inter)); //Area triangles is half than square
+            Vector3 forceTriangle = areatriangle * winddirectiondensity; //Finally compute the total forçe once we know the area
+            //Add one third of the force to each node
             particles[t.indexTriA].AddForce(forceTriangle/3.0f);
             particles[t.indexTriB].AddForce(forceTriangle/3.0f);
             particles[t.indexTriC].AddForce(forceTriangle/3.0f);
         }
     }
-
-    /*void ComputeForces(Particles a, Particles b, float elast, float dampi, float length)
+    //Draw the lines between particles
+    public void DrawGizmos()
     {
-        
-        Vector3 direction = a.Position - b.Position;
-        direction = direction.normalized;
-
-        var v1 = Vector3.Dot(direction, a.Velocity);
-        var v2 = Vector3.Dot(direction, b.Velocity);
-
-        var springDamperForce = (-elast * (length - direction.magnitude)) - (dampi * (v1 - v2));
-        
-        var forceInternal = springDamperForce * direction;
-        /*Vector3 direction = a.position - b.position;
-        float currentLength = direction.magnitude;
-        //Debug.Log(direction);
-        direction = direction.normalized;
-        //Spring force + falta multiplicar per la constant de la molla
-        float springForce = (-1.0f)* elast * (currentLength - length); //rest length = 0.5
-        
-        //spring amortiguamiento
-        Vector3 deltaVelocity = a.velocity - b.velocity;
-        //Falta multiplicar per la constant de amortiguament
-        float dampingForce = (-1.0f) * dampi * Vector3.Dot(deltaVelocity, direction);
-        Vector3 forceInternal = (springForce + dampingForce) * direction;
-        */
-        //Add forces to vector forces in each particle
-        //Debug.Log(direction);
-        /*
-        a.AddForce(forceInternal);
-        b.AddForce(-forceInternal);
-    }*/
-
-
-        public void DrawGizmos()
+        if(drawSprings)
         {
             for(int i = 0, n = springs.Count; i < n; i++)
             {
                 var p = springs[i];
-                //Gizmos.color = Color.yellow;
-                //Gizmos.DrawSphere(p.position, 0.2f);
-
                 Gizmos.color = Color.white;
                 Gizmos.DrawLine(p.particleA.Position, p.particleB.Position);
-
-                /*p.Connection.ForEach(e => {
-                    var other = e.Other(p);
-                    Gizmos.DrawLine(p.Position, other.Position);
-                });*/
             }
         }
+    }
 }
-
-
-
-
-
-
-
-
-
-/*
-//Aquest es per fer verlet perque la integracio no requereix temps
-
-
-/*using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-public class Simulate
-{
-    List<Particles> particles;
-
-    public Simulate(List<Particles> particles)
-    {
-        this.particles = particles;
-    }
-
-    public void Simu(int iterations, float dt)
-    {
-        //Step();
-        Solve(iterations, dt);
-    }
-
-    /*void Step()
-    {
-        particles.ForEach(p => {
-            p.Step();
-        });
-    }
-
-    void Solve(int iterations, float dt)
-    {
-        for(int i = 0; i < iterations; i++)
-        {
-            particles.ForEach(p => Solve(p));
-        }
-    }
-
-    void Solve(Particles particle)
-    {
-        ComputeForcesExternal(particle);
-        particle.Connection.ForEach(e =>
-        {
-            var other = e.Other(particle);
-            var elast = e.Elast;
-            var damp = e.Dampi;
-            ComputeForces(particle, other, elast, damp, e.Length);
-
-            //He tret de solve other i la logitud de la
-            //molla perque ja esta tot calculat ara simplement
-            //cauclo la nova posicio de cada particula.
-            Solve(particle);
-        });
-    }
-
-    void Solve(Particles a)
-    {
-        //Euler
-        float
-
-        var delta = a.position - b.position;
-        var current = delta.magnitude;
-        var f = (current - rest) / current;
-        a.position -= f * 0.5f * delta;
-        b.position += f * 0.5f * delta;
-
-    }
-
-    void ComputeForces(Particles a, Particles b, float elast, float dampi, float length)
-    {
-        Vector3 direction = a.position - b.position;
-        float currentLength = direction.magnitude;
-        direction = direction.normalized;
-        //Spring force + falta multiplicar per la constant de la molla
-        float springForce = (-1.0f)* elast * (currentLength - length); //rest length = 0.5
-        
-        //spring amortiguamiento
-        Vector3 deltaVelocity = a.velocity - b.velocity;
-        //Falta multiplicar per la constant de amortiguament
-        float dampingForce = (-1.0f) * dampi * Vector3.Dot(deltaVelocity, direction);
-        Vector3 forceInternal = (springForce + dampingForce) * direction;
-
-        //Add forces to vector forces in each particle
-
-        a.internalForces = forceInternal;
-        b.internalForces = -forceInternal;
-    }
-
-    void ComputeForcesExternal(Particles a)
-    {
-        //Gravity
-
-
-        //Wind
-
-        a.externalForces = 
-    }
-
-
-        public void DrawGizmos()
-        {
-            for(int i = 0, n = particles.Count; i < n; i++)
-            {
-                var p = particles[i];
-                //Gizmos.color = Color.yellow;
-                //Gizmos.DrawSphere(p.position, 0.2f);
-
-                Gizmos.color = Color.white;
-                p.Connection.ForEach(e => {
-                    var other = e.Other(p);
-                    Gizmos.DrawLine(p.position, other.position);
-                });
-            }
-        }
-
-}
-
-*/
-
