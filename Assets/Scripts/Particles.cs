@@ -4,7 +4,6 @@ using UnityEngine;
 
 public class Particles
 {
-    //public List<Springs> Connection { get { return connection; } }
     public Vector3 Force { get {return force;} set {force = value;}}
     public Vector3 Velocity { get {return velocity;} set {velocity = value;}}
     public Vector3 Position { get {return position;} set {position = value;}}
@@ -60,22 +59,17 @@ public class Particles
 
     public void AddPosition(Vector3 positionMod)
     {
+        prev = position;
         position += positionMod;
+        //velocity = (position - prev)/0.02f;
     }
 
     public void UpdateParticle(float dt)
     {
         float deltaTimeMass = (dt * dt) / mass;
         var lastPosition = position; 
-        position = position * 2 - prev + deltaTimeMass * force;
+        position = position * 2f - prev + deltaTimeMass * force;
         prev = lastPosition;
         velocity = (position - prev) / dt;
-        /*Vector3 new_pos = position + velocity * dt + force/mass * 0.5f *dt*dt;
-        Vector3 new_force = force;
-        Vector3 new_vel = velocity + (force/mass + new_force/mass) * (dt*0.5f);
-        position = new_pos;
-        velocity = new_vel;
-        force = new_force;*/
-
     }
 }

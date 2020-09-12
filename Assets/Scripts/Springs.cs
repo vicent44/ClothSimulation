@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using static System.Math;
+using System;
 
 
 public class Springs
@@ -30,46 +31,20 @@ public class Springs
         this.elast = elast;
         this.dampi = dampi;
         this.springType = springtype;
-
         this.restLength = (a.Position - b.Position).magnitude;
     }
 
     public void ApplyForce()
     {
-            Vector3 direction1 = a.Position - b.Position;
-            var dirnor = direction1.magnitude;
-            Vector3 directionPrev = a.Prev - b.Prev;
-            Vector3 len = direction1 - directionPrev;
-            var f = (dirnor - restLength) / dirnor;
-            if(a.isActive) a.Position -= 0.5f * direction1 * f;
-            if(b.isActive) b.Position += 0.5f * direction1 * f;
-
-        //Prova de lo del 10%
-        /*Vector3 direction2 = a.Position - b.Position;
-        Vector3 direction3 = a.Prev - b.Prev;
-        var dirnorm2 = direction2.magnitude;
-        var dirnorm3 = direction3.magnitude;
-        var dife = Abs(dirnorm2 - dirnorm3);
-        //Debug.Log(dife);
-
-        if(dife > restLength * 1.2f)
-        {
-            if(a.isActive) a.Position = a.restLength * 1.2f;
-            if(b.isActive) b.Position = ;            
-        }    
-        if(dife < restLength * 0.90f)
-        {
-            if(a.isActive) a.Position = ;
-            if(b.isActive) b.Position = ;
-        }*/
-
+        Vector3 direction1 = a.Position - b.Position;
+        var dirnor = direction1.magnitude;
+        var f = (dirnor - restLength) / restLength;
+        if(a.isActive) a.Position -= 0.5f * direction1 * f;
+        if(b.isActive) b.Position += 0.5f * direction1 * f;
 
         Vector3 direction = a.Position - b.Position;
-
-        //Debug.Log(direction);
         float dist = direction.magnitude;
         direction = direction.normalized;
-        //Debug.Log(direction);
 
         float springForce = -elast * (dist - restLength);
 
@@ -77,23 +52,6 @@ public class Springs
         float dampingForce = -dampi * Vector3.Dot(deltaVelocity, direction);
 
         Vector3 force = (springForce + dampingForce) * direction;
-
-        /*var v1 = Vector3.Dot(direction, a.Velocity);
-        var v2 = Vector3.Dot(direction, b.Velocity);
-
-        var springDamperForce = (-elast * (restLength - dist)) - (dampi * (v1 - v2));
-        */
-        //var forceInternala = springDamperForce * direction;
-        //var forceInternalb = -forceInternala;
-
-        //Debug.Log(forceInternala);
-
-        /*Vector3 direction = a.Position - b.Position;
-        dist = direct
-        direction = direction.normalized;
-
-        float springForce = - elast * ()*/
-        //Debug.Log(force);
 
         if(a.isActive)
         {

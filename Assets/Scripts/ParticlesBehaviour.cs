@@ -23,7 +23,7 @@ public class ParticlesBehaviour : MonoBehaviour
     //Update is called once per frame
     void Update()
     {
-        transform.position = _particle.Position;        
+        transform.position = _particle.Position;
     }
 
     public static ParticlesBehaviour Create(Vector3 po, float mass, int pi, int pj, GameObject baseGameObject = null)

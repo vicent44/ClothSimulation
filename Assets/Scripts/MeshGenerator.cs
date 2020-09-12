@@ -15,17 +15,17 @@ public class MeshGenerator : MonoBehaviour
     //Variable to choose if we want to draw the lines between particles
     [SerializeField] bool drawSprings = true;
     //Setting the cloth density
-    [SerializeField] float clothDensity = 1f;
+    [SerializeField] float clothDensity = 150f;
     //Wind direction, in normal vector
     [SerializeField] Vector3 windDirection=new Vector3(0,0,1);
     //Wind module
-    [SerializeField] float windModule = 1f;
+    [SerializeField] float windModule = 10f;
 
     //Setting all the constants for the springs
     [SerializeField] float elasticConstantStructural = 20f;
     [SerializeField] float elasticConstantShear = 20f;
     [SerializeField] float elasticConstantBend = 20f;
-    [SerializeField] float dampingConstant = 0.25f;
+    [SerializeField] float dampingConstant = 0.7f;
     //Setting all the constants of friction and dissipation for cloth and plane
     [SerializeField] float frictionConstPlane = 0.7f;
     [SerializeField] float dissipationConstPlane = 0.1f;
@@ -50,6 +50,8 @@ public class MeshGenerator : MonoBehaviour
     [SerializeField] float sphereScale = 0.1f;
     //Set the transform plane to know where to do the plane collision
     [SerializeField] Transform plane;
+    [SerializeField] Transform secondPlane;
+    [SerializeField] Vector3 normalSecondPlane = new Vector3(0f, 0f, 1f);
 
     //Mouse Drag Variables
     Vector3 screenPoint;
@@ -71,15 +73,21 @@ public class MeshGenerator : MonoBehaviour
         _triangles = new List<Triangles>();
         _sphere = new List<GameObject>();
 
+        //To be able to change the size of the sphere
         sphereControl.transform.localScale = new Vector3(sphereScale, sphereScale, sphereScale);
 
+        //In the editor to have a parent of all the particles
         var particleParent = new GameObject("particleParent");
 
+        //Calcule the area of the cloth
         float area = 0.2f * (gridSize - 1) * 0.2f * (gridSize - 1);
 
+        //Calcule the total mass of the cloth with the density
         float massTotal = clothDensity * area;
+        //Calcule the mass of each particle
         float mass = massTotal / (gridSize * gridSize);
 
+        //Instantiate the position of the particles and the gameobject.
         float jP = 0;
         float iP = 0;
         int pi = 0;
@@ -100,9 +108,6 @@ public class MeshGenerator : MonoBehaviour
             }
             pj++;
         }
-
-        float distBetwenParticles = (_particles[0].Position - _particles[1].Position).magnitude;
-        winddirectiondensity = windDirection * windModule * clothDensity;
         
         //Springs
         //Structural Horizontal - Right
@@ -188,11 +193,17 @@ public class MeshGenerator : MonoBehaviour
             }
         }
         
+        //Fix two particles
         _particles[0].isActive = false;
         _particles[gridSize - 1].isActive = false;
 
-        simulator = new Simulate(_particles, _springs, _triangles, winddirectiondensity, plane, gridSize, frictionConstPlane, dissipationConstPlane, frictionConstCloth, dissipationConstCloth, drawSprings);
+        Vector3.Normalize(normalSecondPlane);
 
+        //Calcule a part of the wind force and call the simulation script to incitialize it with all the needed information
+        winddirectiondensity = windDirection * windModule * clothDensity;
+        simulator = new Simulate(_particles, _springs, _triangles, winddirectiondensity, plane, secondPlane, normalSecondPlane, gridSize, frictionConstPlane, dissipationConstPlane, frictionConstCloth, dissipationConstCloth, drawSprings);
+
+        //Creating the mess
         mesh = new Mesh();
         GetComponent<MeshFilter>().mesh = mesh;
         CreateShape();
@@ -375,6 +386,7 @@ public class MeshGenerator : MonoBehaviour
 
     void Update()
     {
+        //Chech that a step is done only every deltaTimeStep and press space in the keyboard to pause/start
         timePassed += Time.deltaTime;
         if(timePassed >= deltaTimeStep) timePassed = 0.0f;
         if(!isPaused && timePassed == 0.0f)
@@ -385,8 +397,9 @@ public class MeshGenerator : MonoBehaviour
             UpdateMesh();
         }
         if (Input.GetKeyDown(KeyCode.Space))
+        {
             isPaused = !isPaused;
-
+        }
         // Sets an anchor with right mouse click
         if (Input.GetMouseButtonDown(1))
         {
@@ -555,9 +568,9 @@ public class MeshGenerator : MonoBehaviour
         }
         
         mesh.vertices = vertices;
-        mesh.triangles = triangles;
+        //mesh.triangles = triangles;
 
-        //mesh.SetSubMesh(1, 1);
+        mesh.SetTriangles(triangles, 0);
 
         mesh.RecalculateNormals();
         //Debug.Log("Submeshes: " + mesh.subMeshCount);

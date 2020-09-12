@@ -10,6 +10,8 @@ public class Simulate
     List<Triangles> triangles;
     Vector3 winddirectiondensity;
     Transform plane;
+    Transform secondPlane;
+    Vector3 directionNormalSecondPlane;
 
     public struct SPHash
     {
@@ -23,13 +25,15 @@ public class Simulate
     public float dissipationConstCloth;
     public bool drawSprings;
 
-    public Simulate(List<Particles> particles, List<Springs> springs, List<Triangles> triangles, Vector3 winddirectiondensity, Transform plane, int gridSize, float frictionConstPlane, float dissipationConstPlane, float frictionConstCloth, float dissipationConstCloth, bool drawSprings)
+    public Simulate(List<Particles> particles, List<Springs> springs, List<Triangles> triangles, Vector3 winddirectiondensity, Transform plane, Transform secondPlane, Vector3 directionNormalSecondPlane, int gridSize, float frictionConstPlane, float dissipationConstPlane, float frictionConstCloth, float dissipationConstCloth, bool drawSprings)
     {
         this.particles = particles;
         this.springs = springs;
         this.triangles = triangles;
         this.winddirectiondensity = winddirectiondensity;
         this.plane = plane;
+        this.secondPlane = secondPlane;
+        this.directionNormalSecondPlane = directionNormalSecondPlane;
         this.gridSize = gridSize;
         this.frictionConstPlane = frictionConstPlane;
         this.dissipationConstPlane = dissipationConstPlane;
@@ -105,6 +109,27 @@ public class Simulate
         }
     }
 
+    void CheckSecondPlaneCollitions(float dt, float frictionConstPlane, float dissipationConstPlane)
+    {
+        foreach(var p in particles)
+        {
+            Vector3 normalPlane = directionNormalSecondPlane;
+            Vector3 d = p.Position - (secondPlane.position + 0.02f * normalPlane);
+
+            float dot = Vector3.Dot(normalPlane, d);
+            if(dot <= 0)
+            {
+                p.Position -= dot * normalPlane;
+                Vector3 normalVelocity = Vector3.Dot(normalPlane,p.Velocity) * normalPlane;
+                Vector3 tangencialVelocity = p.Velocity - normalVelocity;
+                Vector3 normalForce = Vector3.Dot(p.Force, normalPlane) * normalPlane;
+                Vector3 tangencialForce = p.Force - normalForce;
+
+                p.Position = p.Position - dt * (tangencialVelocity-frictionConstPlane*normalVelocity.magnitude*(tangencialVelocity/tangencialVelocity.magnitude)-dissipationConstPlane*normalVelocity);
+            }
+        }
+    }
+
     void CheckSelfCollitions(float dt, float frictionConstCloth, float dissipationConstCloth)
     {
         hash = new Hashing(gridSize, 1.0f/(float)gridSize, 1723);
@@ -150,7 +175,7 @@ public class Simulate
                                 p0, w0,
                                 p1, w1,
                                 p2, w2,
-                                0.02f, 500f, 0.0f,
+                                0.05f, 500f, 0.0f,
                                 out corr, out corr0, out corr1, out corr2, out normalTri,
                                 out val0, out val1, out val2))
                             {
@@ -171,12 +196,23 @@ public class Simulate
                                 particles[tri.indexTriB].Position = particles[tri.indexTriB].Prev + 0.02f * vel1;
                                 particles[tri.indexTriC].Position = particles[tri.indexTriC].Prev + 0.02f * vel2;*/
 
+                                Vector3 d0 = particles[idx].Position - corr;
+                                float dot0 = Vector3.Dot(normalTri, d0);
+                                //particles[idx].Position -= dot0 * normalTri;
+                                //if(dot0<0)particles[idx].AddPosition(-dot0 * normalTri); 
+                                //if(dot0>0)particles[idx].AddPosition(dot0 * normalTri);
+
                                 //Velocity
                                 Vector3 normalVelocity0 = Vector3.Dot(normalTri, particles[idx].Velocity) * normalTri;
                                 Vector3 normalVelocity1 = Vector3.Dot(normalTri, particles[tri.indexTriA].Velocity) * normalTri;
                                 Vector3 normalVelocity2 = Vector3.Dot(normalTri, particles[tri.indexTriB].Velocity) * normalTri;
                                 Vector3 normalVelocity3 = Vector3.Dot(normalTri, particles[tri.indexTriC].Velocity) * normalTri;
-
+                                
+                                /*Vector3 normalVelocity0 = Vector3.Dot(corr0, particles[idx].Velocity) * corr0;
+                                Vector3 normalVelocity1 = Vector3.Dot(corr0, particles[tri.indexTriA].Velocity) * corr0;
+                                Vector3 normalVelocity2 = Vector3.Dot(corr0, particles[tri.indexTriB].Velocity) * corr0;
+                                Vector3 normalVelocity3 = Vector3.Dot(corr0, particles[tri.indexTriC].Velocity) * corr0;*/
+                                
                                 Vector3 tangencialVelocity0 = particles[idx].Velocity - normalVelocity0;
                                 Vector3 tangencialVelocity1 = particles[tri.indexTriA].Velocity - normalVelocity0;
                                 Vector3 tangencialVelocity2 = particles[tri.indexTriB].Velocity - normalVelocity0;
@@ -193,10 +229,14 @@ public class Simulate
                                 Vector3 velocityBest3 = tangencialVelocity3 - frictionConstCloth*normalVelocity3.magnitude*(tangencialVelocity3/tangencialVelocity3.magnitude) - dissipationConstCloth*normalVelocity3;
 
                                 //Position
-                                particles[idx].Position = particles[idx].Prev - dt * velocity0;
-                                particles[tri.indexTriA].Position = particles[tri.indexTriA].Prev - dt * velocity1 * val0; 
-                                particles[tri.indexTriB].Position = particles[tri.indexTriB].Prev - dt * velocity2 * val1;
-                                particles[tri.indexTriC].Position = particles[tri.indexTriC].Prev - dt * velocity3 * val2;
+                                //particles[idx].AddPosition(-dt * velocityBest0);
+                                particles[idx].Position = particles[idx].Prev + dt * velocityBest0;
+                                //particles[tri.indexTriA].AddPosition(- dt * velocityBest1 * val0);
+                                particles[tri.indexTriA].Position = particles[tri.indexTriA].Prev - dt * velocityBest1 * val0;
+                                //particles[tri.indexTriB].AddPosition(- dt * velocityBest2 * val1);
+                                particles[tri.indexTriB].Position = particles[tri.indexTriB].Prev - dt * velocityBest2 * val1;
+                                //particles[tri.indexTriC].AddPosition(- dt * velocityBest3 * val2);
+                                particles[tri.indexTriC].Position = particles[tri.indexTriC].Prev - dt * velocityBest3 * val2;
 
 
                                 /*particles[idx].Position = particles[idx].Prev - normalVelocity0 * 0.02f;
@@ -320,7 +360,7 @@ public class Simulate
 
         Vector3 n = p - q; //Distance between point baricentric and node
         float l = n.magnitude; //Distance in magnitude
-        Vector3.Normalize(n); //Direction where the point is from the surface of the triangle
+        //Vector3.Normalize(n); //Direction where the point is from the surface of the triangle
         float C = l - restDist;
         Vector3 grad = n;
         Vector3 grad0 = -n * b0;
@@ -337,24 +377,10 @@ public class Simulate
 
         if (s == 0.0f) return false;
 
-        //normalTri = n * l;
-
-        corr = -s * w * grad;
-        corr0 = -s * w0 * grad0;
+        corr = q;//-s * w * grad;
+        corr0 = n;//-s * w0 * grad0;
         corr1 = -s * w1 * grad1;
         corr2 = -s * w2 * grad2;
-        
-
-        
-        /*float overlap = restDist - Vector3.Dot(p - b0*p0 - b1*p1 - b2*p2, n);
-        float repulsionImpulse = 1f/(w*2f);//compressionStiffness * overlap * 0.02f;
-        //float repul = - Math.Min(repulsionImpulse, 1f/w * (0.1f*overlap/0.02f));
-        //Vector3 imp = repul * n;
-        float impMed = 2f*repulsionImpulse /(1f + b0*b0 + b1*b1 + b2*b2);
-        corr = -impMed * w * n;
-        corr0 = impMed * w0 * n * b0;
-        corr1 = impMed * w1 * n * b1;
-        corr2 = impMed * w2 * n * b2;*/
 
         val0 = b0;
         val1 = b1;

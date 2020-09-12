@@ -343,13 +343,13 @@ MonoBehaviour:
   clothDensity: 150
   windDirection: {x: 0, y: 0, z: 0}
   windModule: 10
-  elasticConstantStructural: 50
+  elasticConstantStructural: 5
   elasticConstantShear: 1.24
-  elasticConstantBend: 2
-  dampingConstant: 0.99
+  elasticConstantBend: 1
+  dampingConstant: 0.2
   frictionConstPlane: 0.7
   dissipationConstPlane: 0.1
-  frictionConstCloth: 0.6
+  frictionConstCloth: 0.2
   dissipationConstCloth: 0.9
   deltaTimeStep: 0.02
   sphereControl: {fileID: 6907724091159522119, guid: 272305273b44d2bf5a073c6852983f2e,
