@@ -14,18 +14,19 @@ public class ParticlesBehaviour : MonoBehaviour
     private bool _moveWithMouse;
     public Vector3 previousMousePosition = Vector3.zero;
 
-    // Start is called before the first frame update
+    //Sett the inicial positions of the particles/vertex
     void Start()
     {
         transform.position = _particle.Position;
     }
 
-    //Update is called once per frame
+    //Update the positions of the particles/vertex
     void Update()
     {
         transform.position = _particle.Position;
     }
 
+    //Creatio of the vertex objects
     public static ParticlesBehaviour Create(Vector3 po, float mass, int pi, int pj, GameObject baseGameObject = null)
     {
         // If a baseGameObject was passed in instantiate it, otherwise create a default

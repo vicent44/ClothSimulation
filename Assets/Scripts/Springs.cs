@@ -34,14 +34,18 @@ public class Springs
         this.restLength = (a.Position - b.Position).magnitude;
     }
 
+    //Appli the force of the spring to the particles that
+    //take part of it
     public void ApplyForce()
     {
+        //First I make a correction to avoid superelasticity.
         Vector3 direction1 = a.Position - b.Position;
         var dirnor = direction1.magnitude;
         var f = (dirnor - restLength) / restLength;
         if(a.isActive) a.Position -= 0.5f * direction1 * f;
         if(b.isActive) b.Position += 0.5f * direction1 * f;
 
+        //Calculation of damping and elastic forces of the spring.
         Vector3 direction = a.Position - b.Position;
         float dist = direction.magnitude;
         direction = direction.normalized;
@@ -53,6 +57,7 @@ public class Springs
 
         Vector3 force = (springForce + dampingForce) * direction;
 
+        //Add the force to the particle (is it's needed, if it's not ancored)
         if(a.isActive)
         {
             a.AddForce(force);

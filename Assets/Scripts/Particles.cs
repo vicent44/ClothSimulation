@@ -35,6 +35,7 @@ public class Particles
     protected int i;
     protected int j;
 
+    //Instantiate particles
     public Particles(Vector3 p, float m, int ii, int jj)
     {
         mass = m;
@@ -46,24 +47,25 @@ public class Particles
         i = ii;
         j = jj;
     }
-
+    //Add force to the summ of forces
     public void AddForce(Vector3 forceAdded)
     {
         force += forceAdded;
     }
-
+    //Reset the force (done it every steep)
     public void ResetResultantForce()
     {
         force = Vector3.zero;
     }
-
+    //Update particle when the particle is ancored and you
+    //change it's position with arrows.
     public void AddPosition(Vector3 positionMod)
     {
         prev = position;
         position += positionMod;
-        //velocity = (position - prev)/0.02f;
+        //velocity = (position - prev)/0.01f;
     }
-
+    //Update particle using verlet
     public void UpdateParticle(float dt)
     {
         float deltaTimeMass = (dt * dt) / mass;

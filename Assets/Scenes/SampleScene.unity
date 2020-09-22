@@ -338,6 +338,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7f3e4438a1192696a85e6692160de84d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  EdgeOrPointCheck: 1
   gridSizeNew: 3
   drawSprings: 1
   clothDensity: 150
@@ -345,17 +346,19 @@ MonoBehaviour:
   windModule: 10
   elasticConstantStructural: 5
   elasticConstantShear: 1.24
-  elasticConstantBend: 1
+  elasticConstantBend: 0.5
   dampingConstant: 0.2
   frictionConstPlane: 0.7
   dissipationConstPlane: 0.1
-  frictionConstCloth: 0.2
-  dissipationConstCloth: 0.9
-  deltaTimeStep: 0.02
+  frictionConstCloth: 0.1
+  dissipationConstCloth: 0.7
+  deltaTimeStep: 0.01
   sphereControl: {fileID: 6907724091159522119, guid: 272305273b44d2bf5a073c6852983f2e,
     type: 3}
   sphereScale: 0.1
   plane: {fileID: 536771667}
+  secondPlane: {fileID: 0}
+  normalSecondPlane: {x: 0, y: 0, z: 1}
   isPaused: 1
 --- !u!33 &835045764
 MeshFilter:
@@ -398,6 +401,7 @@ MeshRenderer:
   m_RendererPriority: 0
   m_Materials:
   - {fileID: 0}
+  - {fileID: 2100000, guid: 55ff3437635d5153a81ca3aa9e047335, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -501,3 +505,46 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 10, y: 180, z: 0}
+--- !u!1 &2108582054
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2108582056}
+  - component: {fileID: 2108582055}
+  m_Layer: 0
+  m_Name: PlaneTriangles
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2108582055
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2108582054}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a910acc2f74dac9f99faf507dc179b9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!4 &2108582056
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2108582054}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 4
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
