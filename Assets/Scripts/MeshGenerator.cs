@@ -119,7 +119,8 @@ public class MeshGenerator : MonoBehaviour
         }
 
         int edgesCount = 0;
-        
+        //Instntiate all the springs and all the edges to
+        //be able to check collisions (just edges that mades all the triangles)
         //Springs
         //Structural Horizontal - Right
         for(int j = 0; j < gridSize; j++)
@@ -308,6 +309,7 @@ public class MeshGenerator : MonoBehaviour
         }
     }
 
+    //Here I update the position of the edges for the self collision
     void UpdateEdges()
     {
         int gridSize = gridSizeNew + gridSizeNew * (gridSizeNew - 1);
@@ -355,6 +357,7 @@ public class MeshGenerator : MonoBehaviour
         }
     }
 
+    //Create the mesh and the triangles for the collisions.
     void CreateShape ()
     {
         //int gridSize = gridSizeNew + (gridSizeNew - 1);
@@ -368,6 +371,8 @@ public class MeshGenerator : MonoBehaviour
 
         triangles2 = new int[triangleNum];
 
+        //First I set the triangles by setting the points
+        //of it: And de direction of the normal
         int xx = 0;
         int x = 0;
         int ind = 0;
@@ -417,6 +422,7 @@ public class MeshGenerator : MonoBehaviour
             }
         } 
 
+        //Second I set the position of all the points of the mesh
         for(int i = 0; i < gridSize; i++)
         {
             for(int j = 0; j < gridSize; j++)
@@ -428,6 +434,7 @@ public class MeshGenerator : MonoBehaviour
 
     }
 
+    //Just update every time step the positions of the triangles. 
     void UpdateMesh()
     {
         //int gridSize = gridSizeNew + (gridSizeNew - 1);
@@ -459,6 +466,9 @@ public class MeshGenerator : MonoBehaviour
             }
         }
 
+        //Two meshes one in one normal direction and
+        //the other one in the other direction to be able
+        //to see the mesh in both directions
         mesh.subMeshCount = 2;
 
         mesh.vertices = vertices;
