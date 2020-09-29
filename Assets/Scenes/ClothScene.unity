@@ -338,7 +338,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7f3e4438a1192696a85e6692160de84d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  EdgeOrPointCheck: 0
+  EdgeOrPointCheck: 1
   gridSizeNew: 3
   drawSprings: 1
   clothDensity: 150
@@ -400,7 +400,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 0}
+  - {fileID: 2100000, guid: 077a1bc7a081e8fdc82dcf9ded5e5f1d, type: 2}
   - {fileID: 2100000, guid: 55ff3437635d5153a81ca3aa9e047335, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0

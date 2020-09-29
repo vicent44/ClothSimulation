@@ -63,7 +63,7 @@ public class Particles
     {
         prev = position;
         position += positionMod;
-        //velocity = (position - prev)/0.01f;
+        velocity = (position - prev)/0.01f;
     }
     //Update particle using verlet
     public void UpdateParticle(float dt)

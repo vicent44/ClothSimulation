@@ -236,12 +236,27 @@ public class Simulate
                                 //inelastic collisions.
 
                                 //Position
-                                Vector3 dA = particles[ed.indexEdgeA].Position - (corrT1 + 0.02f*normalTri);
-                                Vector3 dB = particles[ed.indexEdgeB].Position - (corrT1 + 0.02f*normalTri);
+                                Vector3 dA = particles[ed.indexEdgeA].Position - (corrT1 + corrT3.magnitude*normalTri);
+                                Vector3 dB = particles[ed.indexEdgeB].Position - (corrT1 + corrT3.magnitude*normalTri);
 
                                 float dotA = Vector3.Dot(normalTri, dA);
                                 float dotB = Vector3.Dot(normalTri, dB);
                                 
+                                if(situation == 1)
+                                {
+                                    particles[ed.indexEdgeA].Position = particles[ed.indexEdgeA].Prev + corrP1;
+                                    particles[tri.indexTriA].Position = particles[tri.indexTriA].Prev - corrP1 * val1;
+                                    particles[tri.indexTriB].Position = particles[tri.indexTriB].Prev - corrP1 * val2;
+                                    particles[tri.indexTriC].Position = particles[tri.indexTriC].Prev - corrP1 * val3;
+                                }
+                                if(situation == 2)
+                                {
+                                    particles[ed.indexEdgeB].Position = particles[ed.indexEdgeB].Prev + corrP2;
+                                    particles[tri.indexTriA].Position = particles[tri.indexTriA].Prev - corrP2 * val1;
+                                    particles[tri.indexTriB].Position = particles[tri.indexTriB].Prev - corrP2 * val2;
+                                    particles[tri.indexTriC].Position = particles[tri.indexTriC].Prev - corrP2 * val3;
+                                }
+
                                 if(situation == 3)
                                 {
                                     if(dotA < 0f)
@@ -295,7 +310,22 @@ public class Simulate
                                 Vector3 velocityBest1 = tangencialVelocity1 - frictionConstCloth*normalVelocity1.magnitude*(tangencialVelocity1/tangencialVelocity1.magnitude) - dissipationConstCloth*normalVelocity1;
                                 Vector3 velocityBest2 = tangencialVelocity2 - frictionConstCloth*normalVelocity2.magnitude*(tangencialVelocity2/tangencialVelocity2.magnitude) - dissipationConstCloth*normalVelocity2;
                                 Vector3 velocityBest3 = tangencialVelocity3 - frictionConstCloth*normalVelocity3.magnitude*(tangencialVelocity3/tangencialVelocity3.magnitude) - dissipationConstCloth*normalVelocity3;
-                                
+
+                                if(situation == 1)
+                                {
+                                    particles[ed.indexEdgeA].Position = particles[ed.indexEdgeA].Position + dt * velocityBestA;
+                                    particles[tri.indexTriA].Position = particles[tri.indexTriA].Position - dt * velocityBest1 * val1;
+                                    particles[tri.indexTriB].Position = particles[tri.indexTriB].Position - dt * velocityBest2 * val1;
+                                    particles[tri.indexTriC].Position = particles[tri.indexTriC].Position - dt * velocityBest3 * val1;
+                                }
+                                if(situation == 2)
+                                {
+                                    particles[ed.indexEdgeB].Position = particles[ed.indexEdgeB].Position + dt * velocityBestB;
+                                    particles[tri.indexTriA].Position = particles[tri.indexTriA].Position - dt * velocityBest1 * val1;
+                                    particles[tri.indexTriB].Position = particles[tri.indexTriB].Position - dt * velocityBest2 * val2;
+                                    particles[tri.indexTriC].Position = particles[tri.indexTriC].Position - dt * velocityBest3 * val3;
+                                }
+
                                 if(situation == 3)
                                 {
                                     if(dotA < 0f)
@@ -664,9 +694,9 @@ public class Simulate
         //is the center of the edge).
         if(se == 0f) return false;
 
-            Vector3 vvv = e - p;
-            float disti = Vector3.Dot(vvv, normalTri);
-            Vector3 projectedpoint = e - disti*normalTri;
+        Vector3 vvv = e - p;
+        float disti = Vector3.Dot(vvv, normalTri);
+        Vector3 projectedpoint = e - disti*normalTri;
 
         //Point triangle collision (nothing done)
         if(orig == e)
@@ -679,14 +709,14 @@ public class Simulate
                 //Sha daplicar una forca a la particula
                 // orig en la direccio normal del triangle
                 //per tirarla fora
-                corrP1 = Vector3.Normalize(normalTri) * normOrig.magnitude;
+                corrP1 = Vector3.Normalize(normalTri) * 0.01f;// * Vector3.Normalize(normOrig).magnitude;
             }
             else
             {
                 //Sha d'aplicar una froca e al particula
                 // orig en la direccio contraria de la normal
                 //del triangle per tirarla fora
-                corrP1 = -Vector3.Normalize(normalTri) * normOrig.magnitude;
+                corrP1 = -Vector3.Normalize(normalTri) * 0.01f;// * Vector3.Normalize(normOrig).magnitude;
             }
         }
         if(fin == e)
@@ -696,31 +726,44 @@ public class Simulate
             float saberRespecteNormalTri = Vector3.Dot(normFin, normalTri);
             if(saberRespecteNormalTri > 0f) //el edge ve desde la normal
             {
-                corrP2 = Vector3.Normalize(normalTri) * normFin.magnitude;
+                corrP2 = Vector3.Normalize(normalTri) * 0.01f;// * Vector3.Normalize(normFin).magnitude;
             }
             else
             {
-                corrP2 = -Vector3.Normalize(normalTri) * normFin.magnitude;
+                corrP2 = -Vector3.Normalize(normalTri) * 0.01f;// * Vector3.Normalize(normFin).magnitude;
             }
         }
-        //Busquem el centre del segement
-        Vector3 centerEdge = (fin + orig)/2f;
-        Vector3 tri1 = centerEdge - orig;
-        Vector3 tri2 = centerEdge - fin;
-        if(tri1.magnitude < tri2.magnitude)
+        //Look for the short distance. 
+        //    tri1  tri2  
+        //  |---|--|-----|
+        //orig  e      fin
+        //
+        //Then I push the shortest out.
+        //
+        else
         {
-            situation = 3;
-        }
-        if(tri2.magnitude < tri1.magnitude)
-        {
-            situation = 4;
+            Vector3 centerEdge = (fin + orig)/2f;
+            //Vector3 tri1 = centerEdge - orig;
+            //Vector3 tri2 = centerEdge - fin;
+            Vector3 tri1 = e - orig;
+            Vector3 tri2 = e - fin;
+            if(tri1.magnitude < tri2.magnitude)
+            {
+                situation = 3;
+                corrT3 = tri1;
+            }
+            if(tri2.magnitude < tri1.magnitude)
+            {
+                situation = 4;
+                corrT3 = tri2;
+            }
         }
 
         //corrP1 = -se * gradA;
         //corrP2 = -se * gradB;
         corrT1 = p;//-se * grad1;
         corrT2 = projectedpoint;//-se * grad2;
-        corrT3 = -se * grad3;
+        //corrT3 = ;//-se * grad3;
         valP = t;
         val1 = uv;
         val2 = u;
