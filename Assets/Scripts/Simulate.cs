@@ -12,6 +12,7 @@ public class Simulate
     Vector3 winddirectiondensity;
     Transform plane;
     Transform secondPlane;
+    Transform SphereHand;
     Vector3 directionNormalSecondPlane;
 
     public struct SPHash
@@ -24,11 +25,13 @@ public class Simulate
     public float dissipationConstPlane;
     public float frictionConstCloth;
     public float dissipationConstCloth;
+    public float frictionConstShpereHand;
+    public float dissipationConstSphereHand;
     public bool drawSprings;
     public bool EdgeOrTriangle;
 
     //Import all the variables from main script
-    public Simulate(List<Particles> particles, List<Springs> springs, List<Triangles> triangles, List<Edges> edges, Vector3 winddirectiondensity, Transform plane, Transform secondPlane, Vector3 directionNormalSecondPlane, int gridSize, float frictionConstPlane, float dissipationConstPlane, float frictionConstCloth, float dissipationConstCloth, bool drawSprings, bool EdgeOrTriangle)
+    public Simulate(List<Particles> particles, List<Springs> springs, List<Triangles> triangles, List<Edges> edges, Vector3 winddirectiondensity, Transform plane, Transform secondPlane, Vector3 directionNormalSecondPlane, int gridSize, float frictionConstPlane, float dissipationConstPlane, float frictionConstCloth, float dissipationConstCloth, bool drawSprings, bool EdgeOrTriangle, Transform SphereHand, float frictionConstShpereHand, float dissipationConstSphereHand)
     {
         this.particles = particles;
         this.springs = springs;
@@ -45,6 +48,9 @@ public class Simulate
         this.dissipationConstCloth = dissipationConstCloth;
         this.drawSprings = drawSprings;
         this.EdgeOrTriangle = EdgeOrTriangle;
+        this.SphereHand = SphereHand;
+        this.frictionConstShpereHand = frictionConstShpereHand;
+        this.dissipationConstSphereHand = dissipationConstSphereHand;
     }
 
     //Update the particles: First update the position of triangles
@@ -60,6 +66,7 @@ public class Simulate
         WindForce();
         IntegratorVerlet(dt);
         CheckPlaneCollitions(dt, frictionConstPlane, dissipationConstPlane);
+        CheckSphereCollitions(dt, frictionConstShpereHand, dissipationConstSphereHand);
         if(EdgeOrTriangle) CheckSelfCollitionsEdge(dt, frictionConstCloth, dissipationConstCloth);
         else CheckSelfCollitionsPoint(dt, frictionConstCloth, dissipationConstCloth);
     }
@@ -153,6 +160,28 @@ public class Simulate
         }
     }
 
+    void CheckSphereCollitions(float dt, float frictionConstShpereHand, float dissipationConstSphereHand)
+    {
+        foreach(var p in particles)
+        {
+            Vector3 d = p.Position - SphereHand.position;
+            float distSqrt = Vector3.Dot(d, d);
+            float radiusSphere = 0.125f;//SphereHand.GetComponent<SphereCollider>().radius;
+            radiusSphere = radiusSphere * radiusSphere;
+            if(distSqrt <= radiusSphere)
+            {
+                float penetration = (radiusSphere/distSqrt) * (radiusSphere - distSqrt) / radiusSphere;
+                p.Position += d * penetration;
+
+                Vector3 normalSphere = -d;
+                Vector3.Normalize(normalSphere);
+                Vector3 normalVelocity = Vector3.Dot(normalSphere,p.Velocity) * normalSphere;
+                Vector3 tangencialVelocity = p.Velocity - normalVelocity;
+                //p.Position = p.Position - dt * (tangencialVelocity-frictionConstShpereHand*normalVelocity.magnitude*(tangencialVelocity/tangencialVelocity.magnitude)-dissipationConstSphereHand*normalVelocity);
+            }
+        }
+    }
+
     //Check self collisions edge-triangle
     void CheckSelfCollitionsEdge(float dt, float frictionConstCloth, float dissipationConstCloth)
     {
@@ -236,13 +265,13 @@ public class Simulate
                                 //inelastic collisions.
 
                                 //Position
-                                Vector3 dA = particles[ed.indexEdgeA].Position - (corrT1 + corrT3.magnitude*normalTri);
-                                Vector3 dB = particles[ed.indexEdgeB].Position - (corrT1 + corrT3.magnitude*normalTri);
+                                Vector3 dA = particles[ed.indexEdgeA].Position - (corrT1 + 0.01f*normalTri);
+                                Vector3 dB = particles[ed.indexEdgeB].Position - (corrT1 + 0.01f*normalTri);
 
                                 float dotA = Vector3.Dot(normalTri, dA);
                                 float dotB = Vector3.Dot(normalTri, dB);
                                 
-                                if(situation == 1)
+                                /*if(situation == 1)
                                 {
                                     particles[ed.indexEdgeA].Position = particles[ed.indexEdgeA].Prev + corrP1;
                                     particles[tri.indexTriA].Position = particles[tri.indexTriA].Prev - corrP1 * val1;
@@ -255,7 +284,7 @@ public class Simulate
                                     particles[tri.indexTriA].Position = particles[tri.indexTriA].Prev - corrP2 * val1;
                                     particles[tri.indexTriB].Position = particles[tri.indexTriB].Prev - corrP2 * val2;
                                     particles[tri.indexTriC].Position = particles[tri.indexTriC].Prev - corrP2 * val3;
-                                }
+                                }*/
 
                                 if(situation == 3)
                                 {
@@ -311,7 +340,7 @@ public class Simulate
                                 Vector3 velocityBest2 = tangencialVelocity2 - frictionConstCloth*normalVelocity2.magnitude*(tangencialVelocity2/tangencialVelocity2.magnitude) - dissipationConstCloth*normalVelocity2;
                                 Vector3 velocityBest3 = tangencialVelocity3 - frictionConstCloth*normalVelocity3.magnitude*(tangencialVelocity3/tangencialVelocity3.magnitude) - dissipationConstCloth*normalVelocity3;
 
-                                if(situation == 1)
+                                /*if(situation == 1)
                                 {
                                     particles[ed.indexEdgeA].Position = particles[ed.indexEdgeA].Position + dt * velocityBestA;
                                     particles[tri.indexTriA].Position = particles[tri.indexTriA].Position - dt * velocityBest1 * val1;
@@ -324,7 +353,7 @@ public class Simulate
                                     particles[tri.indexTriA].Position = particles[tri.indexTriA].Position - dt * velocityBest1 * val1;
                                     particles[tri.indexTriB].Position = particles[tri.indexTriB].Position - dt * velocityBest2 * val2;
                                     particles[tri.indexTriC].Position = particles[tri.indexTriC].Position - dt * velocityBest3 * val3;
-                                }
+                                }*/
 
                                 if(situation == 3)
                                 {

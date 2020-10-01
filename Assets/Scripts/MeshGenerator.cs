@@ -38,6 +38,8 @@ public class MeshGenerator : MonoBehaviour
     [SerializeField] float dissipationConstPlane = 0.1f;
     [SerializeField] float frictionConstCloth = 0.7f;
     [SerializeField] float dissipationConstCloth = 0.1f;
+    [SerializeField] float frictionConstShpereHand = 0.1f;
+    [SerializeField] float dissipationConstSphereHand = 0.1f;
 
     Simulate simulator;
     Hashing hash;
@@ -60,6 +62,8 @@ public class MeshGenerator : MonoBehaviour
     [SerializeField] Transform plane;
     [SerializeField] Transform secondPlane;
     [SerializeField] Vector3 normalSecondPlane = new Vector3(0f, 0f, 1f);
+
+    [SerializeField] Transform SphereHand;
 
     //Mouse Drag Variables
     Vector3 screenPoint;
@@ -225,7 +229,7 @@ public class MeshGenerator : MonoBehaviour
 
         //Calcule a part of the wind force and call the simulation script to incitialize it with all the needed information
         winddirectiondensity = windDirection * windModule * clothDensity;
-        simulator = new Simulate(_particles, _springs, _triangles, _edges, winddirectiondensity, plane, secondPlane, normalSecondPlane, gridSize, frictionConstPlane, dissipationConstPlane, frictionConstCloth, dissipationConstCloth, drawSprings, EdgeOrPointCheck);
+        simulator = new Simulate(_particles, _springs, _triangles, _edges, winddirectiondensity, plane, secondPlane, normalSecondPlane, gridSize, frictionConstPlane, dissipationConstPlane, frictionConstCloth, dissipationConstCloth, drawSprings, EdgeOrPointCheck, SphereHand, frictionConstShpereHand, dissipationConstSphereHand);
 
         //Creating the mess
         mesh = new Mesh();
@@ -483,4 +487,12 @@ public class MeshGenerator : MonoBehaviour
     {
         simulator.DrawGizmos();
     }
+
+    /*void OnCollisionEnter(Collision col)
+    {
+        if(col.GameObject.name == "SphereHand")
+        {
+
+        }
+    }*/
 }

@@ -35,7 +35,9 @@ public class ParticlesBehaviour : MonoBehaviour
 
         var newParticle = new Particles(po, mass, pi, pj);
         var newParticleBehaviour = newGameObject.AddComponent<ParticlesBehaviour>();
-
+        var newwParticleBehaviour = newGameObject.AddComponent<Rigidbody>();
+        newwParticleBehaviour.isKinematic = true;
+        newwParticleBehaviour.useGravity = false;
         newParticleBehaviour._particle = newParticle;
 
         return newParticleBehaviour;
