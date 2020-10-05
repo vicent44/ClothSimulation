@@ -41,9 +41,9 @@ public class Springs
         //First I make a correction to avoid superelasticity.
         Vector3 direction1 = a.Position - b.Position;
         var dirnor = direction1.magnitude;
-        var f = (dirnor - restLength) / restLength;
-        if(a.isActive) a.Position -= 0.5f * direction1 * f;
-        if(b.isActive) b.Position += 0.5f * direction1 * f;
+        var f = (dirnor - restLength) /restLength;
+        if(a.isActive) a.Position -= 0.05f * direction1 * f;
+        if(b.isActive) b.Position += 0.05f * direction1 * f;
 
         //Calculation of damping and elastic forces of the spring.
         Vector3 direction = a.Position - b.Position;

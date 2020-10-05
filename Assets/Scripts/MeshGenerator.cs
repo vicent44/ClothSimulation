@@ -63,7 +63,8 @@ public class MeshGenerator : MonoBehaviour
     [SerializeField] Transform secondPlane;
     [SerializeField] Vector3 normalSecondPlane = new Vector3(0f, 0f, 1f);
 
-    [SerializeField] Transform SphereHand;
+    [SerializeField] Transform SphereRightHand;
+    [SerializeField] Transform SphereLeftHand;
 
     //Mouse Drag Variables
     Vector3 screenPoint;
@@ -229,7 +230,7 @@ public class MeshGenerator : MonoBehaviour
 
         //Calcule a part of the wind force and call the simulation script to incitialize it with all the needed information
         winddirectiondensity = windDirection * windModule * clothDensity;
-        simulator = new Simulate(_particles, _springs, _triangles, _edges, winddirectiondensity, plane, secondPlane, normalSecondPlane, gridSize, frictionConstPlane, dissipationConstPlane, frictionConstCloth, dissipationConstCloth, drawSprings, EdgeOrPointCheck, SphereHand, frictionConstShpereHand, dissipationConstSphereHand);
+        simulator = new Simulate(_particles, _springs, _triangles, _edges, winddirectiondensity, plane, secondPlane, normalSecondPlane, gridSize, frictionConstPlane, dissipationConstPlane, frictionConstCloth, dissipationConstCloth, drawSprings, EdgeOrPointCheck, SphereRightHand, frictionConstShpereHand, dissipationConstSphereHand, SphereLeftHand);
 
         //Creating the mess
         mesh = new Mesh();
@@ -293,14 +294,24 @@ public class MeshGenerator : MonoBehaviour
         }
 
         // While left mouse click is held down you can drag particles around
-        /*if (Input.GetMouseButton(0))
+        if (Input.GetMouseButtonDown(0))
+        {
+            this.ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            if (Physics.Raycast(this.ray, out this.hit))
             {
-                var currentScreenPoint = new Vector3(Input.mousePosition.x, Input.mousePosition.y, this.screenPoint.z);
-                var currentPosition = Camera.main.ScreenToWorldPoint(currentScreenPoint);
-                this.hit.collider.GetComponent<ParticlesBehaviour>().particles.Position = currentPosition;
-                this.transform.position = currentPosition;
-                UpdateMesh();
-            }*/
+                this.hit.collider.GetComponent<ParticlesBehaviour>().particles.isActive = false;
+            }
+            this.screenPoint = Camera.main.WorldToScreenPoint(this.transform.position);
+            offsett = this.hit.collider.GetComponent<ParticlesBehaviour>().particles.Position - Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, screenPoint.z));
+        }       
+        if (Input.GetMouseButton(0))
+        {
+            var currentScreenPoint = new Vector3(Input.mousePosition.x, Input.mousePosition.y, screenPoint.z);
+            var currentPosition = Camera.main.ScreenToWorldPoint(currentScreenPoint)+offsett;
+            this.hit.collider.GetComponent<ParticlesBehaviour>().particles.Position = currentPosition;
+            this.transform.position = currentPosition;
+            //UpdateMesh();
+        }
 
         // Unsets an anchor with middle mouse click
         if (Input.GetMouseButtonDown(2))
@@ -312,6 +323,9 @@ public class MeshGenerator : MonoBehaviour
             }
         }
     }
+
+    private Vector3 offsett;
+    private Vector3 screenPointt;
 
     //Here I update the position of the edges for the self collision
     void UpdateEdges()

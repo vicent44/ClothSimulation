@@ -4,9 +4,10 @@ using UnityEngine;
 
 public class RobotControl : MonoBehaviour
 {
-    private ParticlesBehaviour particle;
+    private ParticlesBehaviour particle = null;
     private bool detectedBefore = false;
     private int particleNum;
+    Collision collision = null;
 
     void OnCollisionEnter(Collision col)
     {
@@ -14,19 +15,18 @@ public class RobotControl : MonoBehaviour
         {
             if(!detectedBefore)
             {
-                //Debug.Log("col.transform");
+                this.collision = col;
                 var particle = col.gameObject.GetComponent<ParticlesBehaviour>();
                 Debug.Log(particle.particles.isActive);
                 particle.particles.isActive = false;
-                //Debug.Log(particle.GetType());
-                //Debug.Log(particle.particles.isActive);
                 detectedBefore = true;
                 particleNum = particle.particles.I;
-                //oldPos = 
-                //FixedJoint joint = gameObject.AddComponent<FixedJoint>();
-                //joint.anchor = col.contacts[1].point;
-                //joint.connectedBody = col.contacts[1].otherCollider.transform.GetComponentInParent<Rigidbody>();
-                //joint.enableCollision = false;
+
+                //particle.particles.Position = col.contacts[0].point;
+                //Debug.Log(col.contacts[0].thisCollider.GetComponent<SphereCollider>().radius);
+                //col.contacts[0].thisCollider.transform.parent = col.transform;
+                col.transform.parent = col.contacts[0].thisCollider.transform;
+                //particle.transform.SetParent(col.contacts[0].thisCollider.transform);
             }
         }
     }
@@ -37,16 +37,18 @@ public class RobotControl : MonoBehaviour
         {
             if(detectedBefore && particleNum == col.gameObject.GetComponent<ParticlesBehaviour>().particles.I)
             {
+                this.collision = col;
                 var particle = col.gameObject.GetComponent<ParticlesBehaviour>();
                 //particle.particles.isActive = true;
                 //Debug.Log("hiStay");
                 //detectedBefore = false;
-                Debug.Log(col.contacts[1].thisCollider.GetComponent<SphereCollider>().radius);
+                //Debug.Log(col.contacts[0].thisCollider.GetComponent<SphereCollider>().radius);
                 //Vector3 distance = particle.particles.Position - transform.position;
                 //float magnitudDistance = distance.magnitude;
                 //Vector3.Normalize(distance);
                 //Vector3 positionFinal = distance * 0.6f;
-                particle.particles.Position = col.contacts[0].point;//transform.position + positionFinal;
+                //col.contacts[0].thisCollider.transform.parent = col.transform;
+                particle.particles.Position = col.contacts[0].point;
 
             }
         }        
@@ -58,31 +60,20 @@ public class RobotControl : MonoBehaviour
         {
             if(detectedBefore)
             {
+                this.collision = col;
                 var particle = col.gameObject.GetComponent<ParticlesBehaviour>();
                 particle.particles.isActive = true;
                 Debug.Log("hi");
-                detectedBefore = false;
+                //detectedBefore = false;
             }
-        }
-        //particle.particles.isActive = true;
-    }
-    // Start is called before the first frame update
-    /*void Start()
-    {
-        if(particle != null)
-        {
-            particle.particles.isActive = false;
-            particle.particles.Position = transform.position;
         }
     }
 
-    // Update is called once per frame
     void Update()
     {
-        if(particle != null)
+        if(detectedBefore)
         {
-            particle.particles.isActive = false;
             particle.particles.Position = transform.position;
         }
-    }*/
+    }
 }

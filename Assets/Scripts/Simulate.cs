@@ -12,7 +12,8 @@ public class Simulate
     Vector3 winddirectiondensity;
     Transform plane;
     Transform secondPlane;
-    Transform SphereHand;
+    Transform SphereRightHand;
+    Transform SphereLeftHand;
     Vector3 directionNormalSecondPlane;
 
     public struct SPHash
@@ -31,7 +32,7 @@ public class Simulate
     public bool EdgeOrTriangle;
 
     //Import all the variables from main script
-    public Simulate(List<Particles> particles, List<Springs> springs, List<Triangles> triangles, List<Edges> edges, Vector3 winddirectiondensity, Transform plane, Transform secondPlane, Vector3 directionNormalSecondPlane, int gridSize, float frictionConstPlane, float dissipationConstPlane, float frictionConstCloth, float dissipationConstCloth, bool drawSprings, bool EdgeOrTriangle, Transform SphereHand, float frictionConstShpereHand, float dissipationConstSphereHand)
+    public Simulate(List<Particles> particles, List<Springs> springs, List<Triangles> triangles, List<Edges> edges, Vector3 winddirectiondensity, Transform plane, Transform secondPlane, Vector3 directionNormalSecondPlane, int gridSize, float frictionConstPlane, float dissipationConstPlane, float frictionConstCloth, float dissipationConstCloth, bool drawSprings, bool EdgeOrTriangle, Transform SphereRightHand, float frictionConstShpereHand, float dissipationConstSphereHand, Transform SphereLeftHand)
     {
         this.particles = particles;
         this.springs = springs;
@@ -48,9 +49,10 @@ public class Simulate
         this.dissipationConstCloth = dissipationConstCloth;
         this.drawSprings = drawSprings;
         this.EdgeOrTriangle = EdgeOrTriangle;
-        this.SphereHand = SphereHand;
+        this.SphereRightHand = SphereRightHand;
         this.frictionConstShpereHand = frictionConstShpereHand;
         this.dissipationConstSphereHand = dissipationConstSphereHand;
+        this.SphereLeftHand = SphereLeftHand;
     }
 
     //Update the particles: First update the position of triangles
@@ -66,7 +68,8 @@ public class Simulate
         WindForce();
         IntegratorVerlet(dt);
         CheckPlaneCollitions(dt, frictionConstPlane, dissipationConstPlane);
-        CheckSphereCollitions(dt, frictionConstShpereHand, dissipationConstSphereHand);
+        CheckSphereRightCollitions(dt, frictionConstShpereHand, dissipationConstSphereHand);
+        //CheckSphereLeftCollitions(dt, frictionConstShpereHand, dissipationConstSphereHand);
         if(EdgeOrTriangle) CheckSelfCollitionsEdge(dt, frictionConstCloth, dissipationConstCloth);
         else CheckSelfCollitionsPoint(dt, frictionConstCloth, dissipationConstCloth);
     }
@@ -160,11 +163,33 @@ public class Simulate
         }
     }
 
-    void CheckSphereCollitions(float dt, float frictionConstShpereHand, float dissipationConstSphereHand)
+    void CheckSphereRightCollitions(float dt, float frictionConstShpereHand, float dissipationConstSphereHand)
     {
         foreach(var p in particles)
         {
-            Vector3 d = p.Position - SphereHand.position;
+            Vector3 d = p.Position - SphereRightHand.position;
+            float distSqrt = Vector3.Dot(d, d);
+            float radiusSphere = 0.125f;//SphereHand.GetComponent<SphereCollider>().radius;
+            radiusSphere = radiusSphere * radiusSphere;
+            if(distSqrt <= radiusSphere)
+            {
+                float penetration = (radiusSphere/distSqrt) * (radiusSphere - distSqrt) / radiusSphere;
+                p.Position += d * penetration;
+
+                Vector3 normalSphere = -d;
+                Vector3.Normalize(normalSphere);
+                Vector3 normalVelocity = Vector3.Dot(normalSphere,p.Velocity) * normalSphere;
+                Vector3 tangencialVelocity = p.Velocity - normalVelocity;
+                //p.Position = p.Position - dt * (tangencialVelocity-frictionConstShpereHand*normalVelocity.magnitude*(tangencialVelocity/tangencialVelocity.magnitude)-dissipationConstSphereHand*normalVelocity);
+            }
+        }
+    }
+
+    void CheckSphereLeftCollitions(float dt, float frictionConstShpereHand, float dissipationConstSphereHand)
+    {
+        foreach(var p in particles)
+        {
+            Vector3 d = p.Position - SphereLeftHand.position;
             float distSqrt = Vector3.Dot(d, d);
             float radiusSphere = 0.125f;//SphereHand.GetComponent<SphereCollider>().radius;
             radiusSphere = radiusSphere * radiusSphere;
