@@ -48,31 +48,13 @@ public class ParticlesBehaviour : MonoBehaviour
         return newParticleBehaviour;
     }
 
+    Vector3 contactPoint = Vector3.zero;
+
     void OnCollisionEnter(Collision col)
     {
         if(col.gameObject.name != "SphereLeftHand" && col.gameObject.name != "SphereRightHand" && col.gameObject.name != "New Particle")
         {
-            //if(!detectedBefore)
-            //{
-                //this.collision = col;
-                //var particle = col.gameObject.GetComponent<ParticlesBehaviour>();
-                //particle.particles.isActive = false;
-                //detectedBefore = true;
-                //anchor = true;
-                //Debug.Log("Collhand");
-                //particleNum = particle.particles.I;
-                //col.transform.parent = col.contacts[0].thisCollider.transform;
-            //}
-            _particle.Position=(col.contacts[0].point); 
-            /*Vector3 d = _particle.Position - col.transform.position;
-            Vector3 normalCollider = col.contacts[0].point - col.transform.position;
-            Vector3.Normalize(normalCollider);
-
-            float dot = Vector3.Dot(d,normalCollider);
-            if(dot <= 0)
-            {
-                _particle.Position = _particle.Prev - dot * normalCollider;
-            }*/
+            contactPoint = col.contacts[0].point;
         }
     }
 
@@ -80,36 +62,27 @@ public class ParticlesBehaviour : MonoBehaviour
     {
         if(col.gameObject.name != "SphereLeftHand" && col.gameObject.name != "SphereRightHand" && col.gameObject.name != "New Particle")
         {
-            //if(anchor && detectedBefore && particleNum == col.gameObject.GetComponent<ParticlesBehaviour>().particles.I)
-            //{
-                //this.collision = col;
-                //var particle = col.gameObject.GetComponent<ParticlesBehaviour>();
-                //particle.particles.SetPosition(col.contacts[0].point);
-            //}
-            _particle.Position=(col.contacts[0].point); 
-            /*Vector3 d = _particle.Position - col.contacts[0].point;
-            Vector3 normalCollider = col.contacts[0].point - col.transform.position;
-            Vector3.Normalize(normalCollider);
-
-            float dot = Vector3.Dot(d,normalCollider);
+            Vector3 d = _particle.Position - contactPoint;
+            float dot = Vector3.Dot(d,col.contacts[0].normal);
             if(dot <= 0)
             {
-                _particle.Position = _particle.Prev - dot * normalCollider;
-            }*/
-        }        
+                _particle.Position = _particle.Prev - dot * col.contacts[0].normal;
+            
+                Vector3 normalVelocity = Vector3.Dot(col.contacts[0].normal,_particle.Velocity) * col.contacts[0].normal;
+                Vector3 tangencialVelocity = _particle.Velocity - normalVelocity;
+                Vector3 normalForce = Vector3.Dot(_particle.Force, col.contacts[0].normal) * col.contacts[0].normal;
+                Vector3 tangencialForce = _particle.Force - normalForce;
+
+                //_particle.Position = _particle.Position - 0.005f * (tangencialVelocity);//-frictionConstPlane*normalVelocity.magnitude*(tangencialVelocity/tangencialVelocity.magnitude)-dissipationConstPlane*normalVelocity);            
+            }
+        }       
     }
 
     void OnCollisionExit(Collision col)
     {
         if(col.gameObject.name != "SphereLeftHand" && col.gameObject.name != "SphereRightHand" && col.gameObject.name != "New Particle")
         {
-            //if(detectedBefore)
-            //{
-                //this.collision = col;
-                //var particle = col.gameObject.GetComponent<ParticlesBehaviour>();
-                //particle.particles.isActive = true;
-                //detectedBefore = false;
-            //}
+            contactPoint = Vector3.zero;
         }
     }
 }

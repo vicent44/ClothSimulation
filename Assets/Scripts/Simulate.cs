@@ -65,11 +65,11 @@ public class Simulate
         this.triangles = triangles; //Update new triangles for the windForce calculation
         this.edges = edges;
         ComputeTotalForces();
-        //WindForce();
+        WindForce();
         IntegratorVerlet(dt);
         //SolveConstraints();
         CheckPlaneCollitions(dt, frictionConstPlane, dissipationConstPlane);
-        CheckSecondPlaneCollitions(dt, frictionConstPlane, dissipationConstPlane);
+        //CheckSecondPlaneCollitions(dt, frictionConstPlane, dissipationConstPlane);
         CheckSphereRightCollitions(dt, frictionConstShpereHand, dissipationConstSphereHand);
         CheckSphereLeftCollitions(dt, frictionConstShpereHand, dissipationConstSphereHand);
         if(EdgeOrTriangle) CheckSelfCollitionsEdge(dt, frictionConstCloth, dissipationConstCloth);
