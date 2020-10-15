@@ -65,13 +65,16 @@ public class Simulate
         this.triangles = triangles; //Update new triangles for the windForce calculation
         this.edges = edges;
         ComputeTotalForces();
-        WindForce();
+        //WindForce();
         IntegratorVerlet(dt);
+        //SolveConstraints();
         CheckPlaneCollitions(dt, frictionConstPlane, dissipationConstPlane);
+        CheckSecondPlaneCollitions(dt, frictionConstPlane, dissipationConstPlane);
         CheckSphereRightCollitions(dt, frictionConstShpereHand, dissipationConstSphereHand);
-        //CheckSphereLeftCollitions(dt, frictionConstShpereHand, dissipationConstSphereHand);
+        CheckSphereLeftCollitions(dt, frictionConstShpereHand, dissipationConstSphereHand);
         if(EdgeOrTriangle) CheckSelfCollitionsEdge(dt, frictionConstCloth, dissipationConstCloth);
         else CheckSelfCollitionsPoint(dt, frictionConstCloth, dissipationConstCloth);
+        SolveConstraints();
     }
 
     //Computing all the forces and add them to the right particle
@@ -111,6 +114,14 @@ public class Simulate
         }
     }
 
+    void SolveConstraints()
+    {
+        foreach(var s in springs)
+        {
+            s.SolveConstraints();
+        }
+    }
+
     //Check plane collisions
     void CheckPlaneCollitions(float dt, float frictionConstPlane, float dissipationConstPlane)
     {
@@ -126,11 +137,13 @@ public class Simulate
             //to simulate inelastic collitions.
             Vector3 d = p.Position - (plane.position + new Vector3(0f,0.02f,0f));
             Vector3 normalPlane = new Vector3(0f,1f,0f);
+            if(float.IsNaN(d.x)) Debug.Log("nan-d");
 
             float dot = Vector3.Dot(normalPlane, d);
             if(dot <= 0)
             {
-                p.Position -= dot * normalPlane;
+                p.Position = p.Prev - dot * normalPlane;
+                //p.Prev -= dot * normalPlane;
                 Vector3 normalVelocity = Vector3.Dot(normalPlane,p.Velocity) * normalPlane;
                 Vector3 tangencialVelocity = p.Velocity - normalVelocity;
                 Vector3 normalForce = Vector3.Dot(p.Force, normalPlane) * normalPlane;
@@ -146,13 +159,13 @@ public class Simulate
     {
         foreach(var p in particles)
         {
-            Vector3 normalPlane = directionNormalSecondPlane;
+            Vector3 normalPlane = new Vector3(0f,0f,1f);//directionNormalSecondPlane;
             Vector3 d = p.Position - (secondPlane.position + 0.02f * normalPlane);
 
             float dot = Vector3.Dot(normalPlane, d);
             if(dot <= 0)
             {
-                p.Position -= dot * normalPlane;
+                p.Position = p.Prev - dot * normalPlane;
                 Vector3 normalVelocity = Vector3.Dot(normalPlane,p.Velocity) * normalPlane;
                 Vector3 tangencialVelocity = p.Velocity - normalVelocity;
                 Vector3 normalForce = Vector3.Dot(p.Force, normalPlane) * normalPlane;
@@ -290,11 +303,21 @@ public class Simulate
                                 //inelastic collisions.
 
                                 //Position
-                                Vector3 dA = particles[ed.indexEdgeA].Position - (corrT1 + 0.01f*normalTri);
-                                Vector3 dB = particles[ed.indexEdgeB].Position - (corrT1 + 0.01f*normalTri);
-
+                                Vector3 dA = particles[ed.indexEdgeA].Position - (corrT1);//) + 0.005f*normalTri);
+                                Vector3 dB = particles[ed.indexEdgeB].Position - (corrT1);// + 0.005f*normalTri);
+                                if(float.IsNaN(corrT1.x)) Debug.Log("nan1");
+                                //Debug.Log(particles[ed.indexEdgeA].Force);
+                                if(float.IsNaN(particles[ed.indexEdgeA].Position.x)) Debug.Log("nan-A");
                                 float dotA = Vector3.Dot(normalTri, dA);
                                 float dotB = Vector3.Dot(normalTri, dB);
+                                if(float.IsNaN(dA.x)) Debug.Log("nan3");
+                                if(float.IsNaN(dB.x)) Debug.Log("nan4");
+
+                                if(float.IsNaN(particles[ed.indexEdgeB].Position.x)) Debug.Log("nan-B");
+                                if(float.IsNaN(particles[tri.indexTriA].Position.x)) Debug.Log("nan-T1");
+                                if(float.IsNaN(particles[tri.indexTriB].Position.x)) Debug.Log("nan-T2");
+                                if(float.IsNaN(particles[tri.indexTriC].Position.x)) Debug.Log("nan-T3");
+
                                 
                                 /*if(situation == 1)
                                 {
@@ -380,7 +403,7 @@ public class Simulate
                                     particles[tri.indexTriC].Position = particles[tri.indexTriC].Position - dt * velocityBest3 * val3;
                                 }*/
 
-                                if(situation == 3)
+                                /*if(situation == 3)
                                 {
                                     if(dotA < 0f)
                                     {
@@ -413,7 +436,7 @@ public class Simulate
                                         particles[tri.indexTriB].Position = particles[tri.indexTriB].Position - dt * velocityBest2 * val2;
                                         particles[tri.indexTriC].Position = particles[tri.indexTriC].Position - dt * velocityBest3 * val3;
                                     }
-                                }                              
+                                } */                           
                             }   
                         }
                     }
@@ -465,7 +488,7 @@ public class Simulate
                                 p0,
                                 p1,
                                 p2,
-                                0.01f, 500f, 0.0f,
+                                0.05f, 500f, 0.0f,
                                 out corr, out corr0, out corr1, out corr2, out normalTri,
                                 out val0, out val1, out val2))
                             {
@@ -483,6 +506,16 @@ public class Simulate
                                     particles[tri.indexTriA].Position = particles[tri.indexTriA].Prev + dot0 * normalTri * val0; 
                                     particles[tri.indexTriB].Position = particles[tri.indexTriB].Prev + dot0 * normalTri * val1;
                                     particles[tri.indexTriC].Position = particles[tri.indexTriC].Prev + dot0 * normalTri * val2;
+                                
+                                    //particles[idx].Position -= dot0 * normalTri;
+                                    //particles[tri.indexTriA].Position += dot0 * normalTri * val0; 
+                                    //particles[tri.indexTriB].Position += dot0 * normalTri * val1;
+                                    //particles[tri.indexTriC].Position += dot0 * normalTri * val2;
+
+                                    particles[idx].Prev -= dot0 * normalTri;
+                                    particles[tri.indexTriA].Prev += dot0 * normalTri * val0; 
+                                    particles[tri.indexTriB].Prev += dot0 * normalTri * val1;
+                                    particles[tri.indexTriC].Prev += dot0 * normalTri * val2;                                  
                                 }
 
                                 if(dot0 > 0f)
@@ -491,6 +524,16 @@ public class Simulate
                                     particles[tri.indexTriA].Position = particles[tri.indexTriA].Prev - dot0 * normalTri * val0; 
                                     particles[tri.indexTriB].Position = particles[tri.indexTriB].Prev - dot0 * normalTri * val1;
                                     particles[tri.indexTriC].Position = particles[tri.indexTriC].Prev - dot0 * normalTri * val2;
+                                
+                                    //particles[idx].Position += dot0 * normalTri;
+                                    //particles[tri.indexTriA].Position -= dot0 * normalTri * val0; 
+                                    //particles[tri.indexTriB].Position -= dot0 * normalTri * val1;
+                                    //particles[tri.indexTriC].Position -= dot0 * normalTri * val2;
+
+                                    particles[idx].Prev += dot0 * normalTri;
+                                    particles[tri.indexTriA].Prev -= dot0 * normalTri * val0; 
+                                    particles[tri.indexTriB].Prev -= dot0 * normalTri * val1;
+                                    particles[tri.indexTriC].Prev -= dot0 * normalTri * val2;                            
                                 }
 
                                 //Velocity
@@ -515,13 +558,17 @@ public class Simulate
                                 Vector3 velocityBest3 = tangencialVelocity3 - frictionConstCloth*normalVelocity3.magnitude*(tangencialVelocity3/tangencialVelocity3.magnitude) - dissipationConstCloth*normalVelocity3;
 
                                 //Velocity
-
-                                if(dot0 < 0f)
+                                /*if(dot0 < 0f)
                                 {
                                     particles[idx].Position = particles[idx].Position - dt * velocityBest0;
                                     particles[tri.indexTriA].Position = particles[tri.indexTriA].Position + dt * velocityBest1 * val0; 
                                     particles[tri.indexTriB].Position = particles[tri.indexTriB].Position + dt * velocityBest2 * val1;
                                     particles[tri.indexTriC].Position = particles[tri.indexTriC].Position + dt * velocityBest3 * val2;
+                                
+                                    particles[idx].Prev += dot0 * normalTri;
+                                    particles[tri.indexTriA].Prev -= dot0 * normalTri * val0; 
+                                    particles[tri.indexTriB].Prev -= dot0 * normalTri * val1;
+                                    particles[tri.indexTriC].Prev -= dot0 * normalTri * val2;                                 
                                 }
 
                                 if(dot0 > 0f)
@@ -530,6 +577,36 @@ public class Simulate
                                     particles[tri.indexTriA].Position = particles[tri.indexTriA].Position - dt * velocityBest1 * val0; 
                                     particles[tri.indexTriB].Position = particles[tri.indexTriB].Position - dt * velocityBest2 * val1;
                                     particles[tri.indexTriC].Position = particles[tri.indexTriC].Position - dt * velocityBest3 * val2;
+                                
+                                    particles[idx].Prev -= dot0 * normalTri;
+                                    particles[tri.indexTriA].Prev += dot0 * normalTri * val0; 
+                                    particles[tri.indexTriB].Prev += dot0 * normalTri * val1;
+                                    particles[tri.indexTriC].Prev += dot0 * normalTri * val2;                                 
+                                }*/
+                                if(dot0 < 0f)
+                                {
+                                    //particles[idx].Position = particles[idx].Position + dt * velocityBest0;
+                                    //particles[tri.indexTriA].Position = particles[tri.indexTriA].Position - dt * velocityBest1 * val0; 
+                                    //particles[tri.indexTriB].Position = particles[tri.indexTriB].Position - dt * velocityBest2 * val1;
+                                    //particles[tri.indexTriC].Position = particles[tri.indexTriC].Position - dt * velocityBest3 * val2;
+                                
+                                    particles[idx].Prev -= dot0 * velocityBest0;
+                                    particles[tri.indexTriA].Prev += dot0 * velocityBest1 * val0; 
+                                    particles[tri.indexTriB].Prev += dot0 * velocityBest2 * val1;
+                                    particles[tri.indexTriC].Prev += dot0 * velocityBest3 * val2;                                 
+                                }
+
+                                if(dot0 > 0f)
+                                {
+                                    //particles[idx].Position = particles[idx].Position - dt * velocityBest0;
+                                    //particles[tri.indexTriA].Position = particles[tri.indexTriA].Position + dt * velocityBest1 * val0; 
+                                    //particles[tri.indexTriB].Position = particles[tri.indexTriB].Position + dt * velocityBest2 * val1;
+                                    //particles[tri.indexTriC].Position = particles[tri.indexTriC].Position + dt * velocityBest3 * val2;
+                                
+                                    particles[idx].Prev += dot0 * velocityBest0;
+                                    particles[tri.indexTriA].Prev -= dot0 * velocityBest1 * val0; 
+                                    particles[tri.indexTriB].Prev -= dot0 * velocityBest2 * val1;
+                                    particles[tri.indexTriC].Prev -= dot0 * velocityBest3 * val2;                                 
                                 }
                             }   
                         }
@@ -738,6 +815,8 @@ public class Simulate
 
         float se = u*u + v*v + uv*uv;
 
+        if(float.IsNaN(p.x)) return false;
+
         //Here I check where the collision has done,
         //if the collisions is between any of the
         //vertices of the edge just nothing, there
@@ -826,3 +905,124 @@ public class Simulate
         return true; // this ray hits the triangle 
     }
 }
+
+/*
+                                if(situation == 1)
+                                {
+                                    particles[ed.indexEdgeA].Position = particles[ed.indexEdgeA].Prev + corrP1;
+                                    particles[tri.indexTriA].Position = particles[tri.indexTriA].Prev - corrP1;
+                                    particles[tri.indexTriB].Position = particles[tri.indexTriB].Prev - corrP1;
+                                    particles[tri.indexTriC].Position = particles[tri.indexTriC].Prev - corrP1;
+                                }
+                                if(situation == 2)
+                                {
+                                    particles[ed.indexEdgeB].Position = particles[ed.indexEdgeB].Prev + corrP2;
+                                    particles[tri.indexTriA].Position = particles[tri.indexTriA].Prev - corrP2;
+                                    particles[tri.indexTriB].Position = particles[tri.indexTriB].Prev - corrP2;
+                                    particles[tri.indexTriC].Position = particles[tri.indexTriC].Prev - corrP2;
+                                }
+
+                                if(situation == 3)
+                                {
+                                    if(dotA < 0f)
+                                    {
+                                        particles[ed.indexEdgeA].Position = particles[ed.indexEdgeA].Prev - normalTri*dotA;
+                                        particles[tri.indexTriA].Position = particles[tri.indexTriA].Prev + normalTri*dotA;
+                                        particles[tri.indexTriB].Position = particles[tri.indexTriB].Prev + normalTri*dotA;
+                                        particles[tri.indexTriC].Position = particles[tri.indexTriC].Prev + normalTri*dotA;                                    
+                                    }
+                                    if(dotA > 0f)
+                                    {
+                                        particles[ed.indexEdgeA].Position = particles[ed.indexEdgeA].Prev + normalTri*dotA;
+                                        particles[tri.indexTriA].Position = particles[tri.indexTriA].Prev - normalTri*dotA;
+                                        particles[tri.indexTriB].Position = particles[tri.indexTriB].Prev - normalTri*dotA;
+                                        particles[tri.indexTriC].Position = particles[tri.indexTriC].Prev - normalTri*dotA;                                    
+                                    }
+                                }
+                                if(situation == 4)
+                                {
+                                    if(dotB < 0f)
+                                    {
+                                        particles[ed.indexEdgeB].Position = particles[ed.indexEdgeB].Prev - normalTri*dotB;
+                                        particles[tri.indexTriA].Position = particles[tri.indexTriA].Prev + normalTri*dotB;
+                                        particles[tri.indexTriB].Position = particles[tri.indexTriB].Prev + normalTri*dotB;
+                                        particles[tri.indexTriC].Position = particles[tri.indexTriC].Prev + normalTri*dotB;
+                                    }
+                                    if(dotB > 0f)
+                                    {
+                                        particles[ed.indexEdgeB].Position = particles[ed.indexEdgeB].Prev + normalTri*dotB;
+                                        particles[tri.indexTriA].Position = particles[tri.indexTriA].Prev - normalTri*dotB;
+                                        particles[tri.indexTriB].Position = particles[tri.indexTriB].Prev - normalTri*dotB;
+                                        particles[tri.indexTriC].Position = particles[tri.indexTriC].Prev - normalTri*dotB;
+                                    }
+                                }
+
+                                //Velocity
+                                Vector3 normalVelocityA = Vector3.Dot(normalTri, particles[ed.indexEdgeA].Velocity) * normalTri;
+                                Vector3 normalVelocityB = Vector3.Dot(normalTri, particles[ed.indexEdgeB].Velocity) * normalTri;
+                                Vector3 normalVelocity1 = Vector3.Dot(normalTri, particles[tri.indexTriA].Velocity) * normalTri;
+                                Vector3 normalVelocity2 = Vector3.Dot(normalTri, particles[tri.indexTriB].Velocity) * normalTri;
+                                Vector3 normalVelocity3 = Vector3.Dot(normalTri, particles[tri.indexTriC].Velocity) * normalTri;
+                                
+                                Vector3 tangencialVelocityA = particles[ed.indexEdgeA].Velocity - normalVelocityA;
+                                Vector3 tangencialVelocityB = particles[ed.indexEdgeB].Velocity - normalVelocityB;
+                                Vector3 tangencialVelocity1 = particles[tri.indexTriA].Velocity - normalVelocity1;
+                                Vector3 tangencialVelocity2 = particles[tri.indexTriB].Velocity - normalVelocity2;
+                                Vector3 tangencialVelocity3 = particles[tri.indexTriC].Velocity - normalVelocity3;
+
+                                Vector3 velocityBestA = tangencialVelocityA - frictionConstCloth*normalVelocityA.magnitude*(tangencialVelocityA/tangencialVelocityA.magnitude) - dissipationConstCloth*normalVelocityA;
+                                Vector3 velocityBestB = tangencialVelocityB - frictionConstCloth*normalVelocityB.magnitude*(tangencialVelocityB/tangencialVelocityB.magnitude) - dissipationConstCloth*normalVelocityB;
+                                Vector3 velocityBest1 = tangencialVelocity1 - frictionConstCloth*normalVelocity1.magnitude*(tangencialVelocity1/tangencialVelocity1.magnitude) - dissipationConstCloth*normalVelocity1;
+                                Vector3 velocityBest2 = tangencialVelocity2 - frictionConstCloth*normalVelocity2.magnitude*(tangencialVelocity2/tangencialVelocity2.magnitude) - dissipationConstCloth*normalVelocity2;
+                                Vector3 velocityBest3 = tangencialVelocity3 - frictionConstCloth*normalVelocity3.magnitude*(tangencialVelocity3/tangencialVelocity3.magnitude) - dissipationConstCloth*normalVelocity3;
+
+                                if(situation == 1)
+                                {
+                                    particles[ed.indexEdgeA].Position = particles[ed.indexEdgeA].Position + dt * velocityBestA;
+                                    particles[tri.indexTriA].Position = particles[tri.indexTriA].Position - dt * velocityBest1;
+                                    particles[tri.indexTriB].Position = particles[tri.indexTriB].Position - dt * velocityBest2;
+                                    particles[tri.indexTriC].Position = particles[tri.indexTriC].Position - dt * velocityBest3;
+                                }
+                                if(situation == 2)
+                                {
+                                    particles[ed.indexEdgeB].Position = particles[ed.indexEdgeB].Position + dt * velocityBestB;
+                                    particles[tri.indexTriA].Position = particles[tri.indexTriA].Position - dt * velocityBest1;
+                                    particles[tri.indexTriB].Position = particles[tri.indexTriB].Position - dt * velocityBest2;
+                                    particles[tri.indexTriC].Position = particles[tri.indexTriC].Position - dt * velocityBest3;
+                                }
+
+                                if(situation == 3)
+                                {
+                                    if(dotA < 0f)
+                                    {
+                                        particles[ed.indexEdgeA].Position = particles[ed.indexEdgeA].Position - dt * velocityBestA;
+                                        particles[tri.indexTriA].Position = particles[tri.indexTriA].Position + dt * velocityBest1;
+                                        particles[tri.indexTriB].Position = particles[tri.indexTriB].Position + dt * velocityBest2;
+                                        particles[tri.indexTriC].Position = particles[tri.indexTriC].Position + dt * velocityBest3;                                    
+                                    }
+                                    if(dotA > 0f)
+                                    {
+                                        particles[ed.indexEdgeA].Position = particles[ed.indexEdgeA].Position + dt * velocityBestA;
+                                        particles[tri.indexTriA].Position = particles[tri.indexTriA].Position - dt * velocityBest1;
+                                        particles[tri.indexTriB].Position = particles[tri.indexTriB].Position - dt * velocityBest2;
+                                        particles[tri.indexTriC].Position = particles[tri.indexTriC].Position - dt * velocityBest3;                                    
+                                    }
+                                }
+                                if(situation == 4)
+                                {
+                                    if(dotB < 0f)
+                                    {
+                                        particles[ed.indexEdgeB].Position = particles[ed.indexEdgeB].Position - dt * velocityBestB;
+                                        particles[tri.indexTriA].Position = particles[tri.indexTriA].Position + dt * velocityBest1;
+                                        particles[tri.indexTriB].Position = particles[tri.indexTriB].Position + dt * velocityBest2;
+                                        particles[tri.indexTriC].Position = particles[tri.indexTriC].Position + dt * velocityBest3;
+                                    }
+                                    if(dotB > 0f)
+                                    {
+                                        particles[ed.indexEdgeB].Position = particles[ed.indexEdgeB].Position + dt * velocityBestB;
+                                        particles[tri.indexTriA].Position = particles[tri.indexTriA].Position - dt * velocityBest1;
+                                        particles[tri.indexTriB].Position = particles[tri.indexTriB].Position - dt * velocityBest2;
+                                        particles[tri.indexTriC].Position = particles[tri.indexTriC].Position - dt * velocityBest3;
+                                    }
+                                }  
+*/

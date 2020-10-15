@@ -15,6 +15,8 @@ public class MeshGenerator : MonoBehaviour
     Vector3[] normals2;
     int[] triangles;
     int[] triangles2;
+    Vector2[] uvs;
+    Vector2[] uvs2;
     //If point-triangle or edge triangle collition
     [SerializeField] bool EdgeOrPointCheck = true; 
     //Parameter to set the size of the grid
@@ -110,12 +112,12 @@ public class MeshGenerator : MonoBehaviour
         {
             for(int j = 0; j < gridSize; j++)
             {
-                jP = j * 0.2f;
-                iP = i * 0.2f;
+                jP = j * 0.1f;
+                iP = i * 0.1f;
                 
-                var newP = ParticlesBehaviour.Create(new Vector3(jP,0.0f,iP), mass, pi, pj, sphereControl);
+                var newP = ParticlesBehaviour.Create(transform.position+new Vector3(jP,0.0f,iP), mass, pi, pj, sphereControl);
                 newP.transform.SetParent(particleParent.transform, false);
-                newP.transform.localPosition = new Vector3(jP,0.0f,iP);
+                newP.transform.localPosition = (new Vector3(jP,0.0f,iP)+transform.position);
                 newP.particles.Position = newP.transform.position;
                 _particles.Add(newP.particles);
                 pi++;
@@ -388,6 +390,7 @@ public class MeshGenerator : MonoBehaviour
         vertices = new Vector3 [vertexNum];
 
         triangles2 = new int[triangleNum];
+        uvs = new Vector2 [vertices.Length];
 
         //First I set the triangles by setting the points
         //of it: And de direction of the normal
@@ -450,6 +453,11 @@ public class MeshGenerator : MonoBehaviour
             }
         }
 
+        for(int i = 0; i < uvs.Length; i++)
+        {
+            uvs[i] = new Vector2(vertices[i].x, vertices[i].z);
+        }
+
     }
 
     //Just update every time step the positions of the triangles. 
@@ -483,6 +491,13 @@ public class MeshGenerator : MonoBehaviour
                 vertices[pos] = _particles[pos].Position;
             }
         }
+        for(int i = 0; i < uvs.Length; i++)
+        {
+            uvs[i].x = vertices[i].x;
+            uvs[i].y = vertices[i].z;
+        }
+
+
 
         //Two meshes one in one normal direction and
         //the other one in the other direction to be able
@@ -490,6 +505,7 @@ public class MeshGenerator : MonoBehaviour
         mesh.subMeshCount = 2;
 
         mesh.vertices = vertices;
+        //mesh.uv = uvs;
 
         mesh.SetTriangles(triangles, 0);
         mesh.SetTriangles(triangles2, 1);
@@ -501,12 +517,4 @@ public class MeshGenerator : MonoBehaviour
     {
         simulator.DrawGizmos();
     }
-
-    /*void OnCollisionEnter(Collision col)
-    {
-        if(col.GameObject.name == "SphereHand")
-        {
-
-        }
-    }*/
 }

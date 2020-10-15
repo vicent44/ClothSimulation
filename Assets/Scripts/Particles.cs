@@ -22,6 +22,8 @@ public class Particles
     protected Vector3 prev;
 
     protected Vector3 velocity;
+    protected Vector3 prevForce;
+    protected Vector3 velprev;
 
     protected float mass;
     protected float area;
@@ -63,15 +65,52 @@ public class Particles
     {
         prev = position;
         position += positionMod;
-        velocity = (position - prev)/0.01f;
+        velocity = (position - prev)/0.005f;
     }
+
+    public void SetPosition(Vector3 newPos)
+    {
+        prev = position;
+        position = newPos;
+        velocity = (position - prev)/0.005f;
+    }
+
     //Update particle using verlet
     public void UpdateParticle(float dt)
     {
+        if(float.IsNaN(position.x)) Debug.Log("nan");
         float deltaTimeMass = (dt * dt) / mass;
         var lastPosition = position; 
         position = position * 2f - prev + deltaTimeMass * force;
         prev = lastPosition;
         velocity = (position - prev) / dt;
+        if(float.IsNaN(position.x)) Debug.Log("nan-P");
+    }
+    public void UpdateParticlePos(float dt)
+    {
+        //velocity = (position - prev) / dt;
+        //float deltaTimeMass = (dt * dt) / mass;
+        Vector3 lastPosition = position;
+        position = prev + velocity * dt + (force/mass) * dt * dt * 0.5f; 
+        //position = position + velocity * dt + force * deltaTimeMass; 
+        prev = lastPosition;
+        prevForce = force/mass;
+    }
+    public void UpdateParticleVel(float dt)
+    {
+        /*//velocity = (position - prev) / dt;
+        //float deltaTimeMass = (dt * dt) / mass;
+        Vector3 lastPosition = position;
+        velocity = 
+        //position =2f * position - prev + (force/mass) * dt * dt; 
+        //position = position + velocity * dt + force * deltaTimeMass; 
+        //prev = lastPosition;*/
+        /*Vector3 lastVel = velocity;
+        velocity = velocity + 0.5f * (force/mass) * dt;
+        velprev = lastVel;*/
+        Vector3 lastVel = velocity;
+        velocity += (force/mass) * dt;
+        position += (lastVel + velocity) * 0.5f * dt;
+        
     }
 }

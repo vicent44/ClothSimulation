@@ -8,6 +8,7 @@ public class RobotControl : MonoBehaviour
     private bool detectedBefore = false;
     private int particleNum;
     Collision collision = null;
+    private bool anchor = false;
 
     void OnCollisionEnter(Collision col)
     {
@@ -17,17 +18,13 @@ public class RobotControl : MonoBehaviour
             {
                 this.collision = col;
                 var particle = col.gameObject.GetComponent<ParticlesBehaviour>();
-                Debug.Log(particle.particles.isActive);
                 particle.particles.isActive = false;
                 detectedBefore = true;
+                anchor = true;
                 particleNum = particle.particles.I;
-
-                //particle.particles.Position = col.contacts[0].point;
-                //Debug.Log(col.contacts[0].thisCollider.GetComponent<SphereCollider>().radius);
-                //col.contacts[0].thisCollider.transform.parent = col.transform;
                 col.transform.parent = col.contacts[0].thisCollider.transform;
-                //particle.transform.SetParent(col.contacts[0].thisCollider.transform);
             }
+            
         }
     }
 
@@ -35,21 +32,11 @@ public class RobotControl : MonoBehaviour
     {
         if(col.gameObject.name == "New Particle")
         {
-            if(detectedBefore && particleNum == col.gameObject.GetComponent<ParticlesBehaviour>().particles.I)
+            if(anchor && detectedBefore && particleNum == col.gameObject.GetComponent<ParticlesBehaviour>().particles.I)
             {
                 this.collision = col;
                 var particle = col.gameObject.GetComponent<ParticlesBehaviour>();
-                //particle.particles.isActive = true;
-                //Debug.Log("hiStay");
-                //detectedBefore = false;
-                //Debug.Log(col.contacts[0].thisCollider.GetComponent<SphereCollider>().radius);
-                //Vector3 distance = particle.particles.Position - transform.position;
-                //float magnitudDistance = distance.magnitude;
-                //Vector3.Normalize(distance);
-                //Vector3 positionFinal = distance * 0.6f;
-                //col.contacts[0].thisCollider.transform.parent = col.transform;
-                particle.particles.Position = col.contacts[0].point;
-
+                particle.particles.SetPosition(col.contacts[0].point);
             }
         }        
     }
@@ -63,7 +50,6 @@ public class RobotControl : MonoBehaviour
                 this.collision = col;
                 var particle = col.gameObject.GetComponent<ParticlesBehaviour>();
                 particle.particles.isActive = true;
-                Debug.Log("hi");
                 //detectedBefore = false;
             }
         }
@@ -71,9 +57,19 @@ public class RobotControl : MonoBehaviour
 
     void Update()
     {
-        if(detectedBefore)
+        if(Input.GetKey("p"))
         {
-            particle.particles.Position = transform.position;
+            Debug.Log("Unanchor the particle from the robot hand");
+            anchor = false;
+            //detectedBefore = false;
+            collision.gameObject.GetComponent<ParticlesBehaviour>().particles.isActive = true;
+            collision.gameObject.GetComponent<ParticlesBehaviour>().particles.SetPosition(collision.contacts[0].point);
+            collision.contacts[0].thisCollider.transform.DetachChildren();
+        }
+        if(Input.GetKey("o"))
+        {
+            detectedBefore = false;
+            Debug.Log("Now you can select another particle to move");
         }
     }
 }

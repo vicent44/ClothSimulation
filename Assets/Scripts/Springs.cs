@@ -42,8 +42,8 @@ public class Springs
         Vector3 direction1 = a.Position - b.Position;
         var dirnor = direction1.magnitude;
         var f = (dirnor - restLength) /restLength;
-        if(a.isActive) a.Position -= 0.05f * direction1 * f;
-        if(b.isActive) b.Position += 0.05f * direction1 * f;
+        /*if(a.isActive) a.Position -= 0.5f * direction1 * f;
+        if(b.isActive) b.Position += 0.5f * direction1 * f;*/
 
         //Calculation of damping and elastic forces of the spring.
         Vector3 direction = a.Position - b.Position;
@@ -58,6 +58,8 @@ public class Springs
         Vector3 force = (springForce + dampingForce) * direction;
 
         //Add the force to the particle (is it's needed, if it's not ancored)
+        if(float.IsNaN(dampingForce)) Debug.Log("nan-ForceDamping");
+        if(float.IsNaN(a.Velocity.x)) Debug.Log("nan-ForceDam");
         if(a.isActive)
         {
             a.AddForce(force);
@@ -66,5 +68,19 @@ public class Springs
         {
             b.AddForce(-force);
         }
+    }
+
+    public void SolveConstraints()
+    {
+        Vector3 direction1 = a.Position - b.Position;
+        var dirnor = direction1.magnitude;
+        var f = (dirnor - restLength) /dirnor;
+        /*if(a.isActive && b.isActive)
+        {
+            a.Position -= 0.5f * direction1 * f;
+            b.Position += 0.5f * direction1 * f;
+        }*/
+        if(a.isActive) a.Position -= 0.5f * direction1 * f;
+        if(b.isActive) b.Position += 0.5f * direction1 * f;
     }
 }
