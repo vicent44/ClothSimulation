@@ -48,10 +48,15 @@ public class ParticlesBehaviour : MonoBehaviour
         return newParticleBehaviour;
     }
 
+    //Here cloth-robot collisions are handled.
+
     Vector3 contactPoint = Vector3.zero;
 
     void OnCollisionEnter(Collision col)
     {
+        //First when a collision is detected, the position of the
+        //contact is sabed to know the first place where the particle
+        //has penetrated into the robot collider.
         if(col.gameObject.name != "SphereLeftHand" && col.gameObject.name != "SphereRightHand" && col.gameObject.name != "New Particle")
         {
             contactPoint = col.contacts[0].point;
@@ -60,6 +65,9 @@ public class ParticlesBehaviour : MonoBehaviour
 
     void OnCollisionStay(Collision col)
     {
+        //If the collision penetrates into the collider, using the contact point 
+        //the depth of the penetration is calculated and the particle
+        //is pulled out of the collider by changing its position.
         if(col.gameObject.name != "SphereLeftHand" && col.gameObject.name != "SphereRightHand" && col.gameObject.name != "New Particle")
         {
             Vector3 d = _particle.Position - (contactPoint+0.01f*col.contacts[0].normal);
@@ -80,6 +88,7 @@ public class ParticlesBehaviour : MonoBehaviour
 
     void OnCollisionExit(Collision col)
     {
+        //Reset of the contact point everytime that the collision finishes.
         if(col.gameObject.name != "SphereLeftHand" && col.gameObject.name != "SphereRightHand" && col.gameObject.name != "New Particle")
         {
             contactPoint = Vector3.zero;
