@@ -62,7 +62,7 @@ public class ParticlesBehaviour : MonoBehaviour
     {
         if(col.gameObject.name != "SphereLeftHand" && col.gameObject.name != "SphereRightHand" && col.gameObject.name != "New Particle")
         {
-            Vector3 d = _particle.Position - contactPoint;
+            Vector3 d = _particle.Position - (contactPoint+0.01f*col.contacts[0].normal);
             float dot = Vector3.Dot(d,col.contacts[0].normal);
             if(dot <= 0)
             {
