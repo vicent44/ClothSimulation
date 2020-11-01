@@ -80,7 +80,7 @@ public class Springs
             a.Position -= 0.5f * direction1 * f;
             b.Position += 0.5f * direction1 * f;
         }*/
-        if(a.isActive) a.Position -= 0.5f * direction1 * f;
-        if(b.isActive) b.Position += 0.5f * direction1 * f;
+        if(a.isActive) a.Position -= 0.1f * direction1 * f;
+        if(b.isActive) b.Position += 0.1f * direction1 * f;
     }
 }

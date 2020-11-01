@@ -59,12 +59,14 @@ public class RobotControl : MonoBehaviour
     {
         if(Input.GetKey("p"))
         {
+            if(detectedBefore){
             Debug.Log("Unanchor the particle from the robot hand");
             anchor = false;
             //detectedBefore = false;
             collision.gameObject.GetComponent<ParticlesBehaviour>().particles.isActive = true;
-            collision.gameObject.GetComponent<ParticlesBehaviour>().particles.SetPosition(collision.contacts[0].point);
+            collision.gameObject.GetComponent<ParticlesBehaviour>().particles.SetPosition(collision.contacts[0].point+collision.contacts[0].normal*0.2f);
             collision.contacts[0].thisCollider.transform.DetachChildren();
+            }
         }
         if(Input.GetKey("o"))
         {

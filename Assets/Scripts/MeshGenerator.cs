@@ -31,10 +31,10 @@ public class MeshGenerator : MonoBehaviour
     [SerializeField] float windModule = 10f;
 
     //Setting all the constants for the springs
-    [SerializeField] float elasticConstantStructural = 20f;
-    [SerializeField] float elasticConstantShear = 20f;
-    [SerializeField] float elasticConstantBend = 20f;
-    [SerializeField] float dampingConstant = 0.7f;
+    [SerializeField] float elasticConstantStructural;
+    [SerializeField] float elasticConstantShear;
+    [SerializeField] float elasticConstantBend;
+    [SerializeField] float dampingConstant;
     //Setting all the constants of friction and dissipation for cloth and plane
     [SerializeField] float frictionConstPlane = 0.7f;
     [SerializeField] float dissipationConstPlane = 0.1f;

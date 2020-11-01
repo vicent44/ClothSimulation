@@ -139,6 +139,7 @@ public class Simulate
             Vector3 normalPlane = new Vector3(0f,1f,0f);
             if(float.IsNaN(d.x)) Debug.Log("nan-d");
 
+
             float dot = Vector3.Dot(normalPlane, d);
             if(dot <= 0)
             {

@@ -6979,12 +6979,12 @@ MonoBehaviour:
   drawSprings: 0
   clothDensity: 150
   windDirection: {x: 0, y: 0, z: 0}
-  windModule: 10
-  elasticConstantStructural: 50
-  elasticConstantShear: 5
-  elasticConstantBend: 1
+  windModule: 1
+  elasticConstantStructural: 0.1
+  elasticConstantShear: 0.01
+  elasticConstantBend: 0.001
   dampingConstant: 0.3
-  frictionConstPlane: 1
+  frictionConstPlane: 0.1
   dissipationConstPlane: 1
   frictionConstCloth: 1
   dissipationConstCloth: 1
@@ -8328,7 +8328,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 798630721}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2.189, y: 0.476, z: 0.097}
+  m_LocalPosition: {x: 2.216, y: 0.476, z: 0.064}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -13865,7 +13865,7 @@ SphereCollider:
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.7
+  m_Radius: 0.5
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &1288817550
 MeshRenderer:
@@ -17156,7 +17156,7 @@ SphereCollider:
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.7
+  m_Radius: 0.5
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &1659563502
 MeshRenderer:
